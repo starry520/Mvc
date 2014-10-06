@@ -10,13 +10,13 @@ namespace Microsoft.AspNet.Mvc
 {
     public class ActionResultContext
     {
-        private IHeaderDictionary _lazyHeaders;
+        private IHeaderDictionary _createOnReadWriteHeaders;
 
-        internal IHeaderDictionary LazyHeaders
+        internal IHeaderDictionary CreateOnReadWriteHeaders
         {
             get
             {
-                return _lazyHeaders;
+                return _createOnReadWriteHeaders;
             }
         }
 
@@ -26,18 +26,49 @@ namespace Microsoft.AspNet.Mvc
         {
             get
             {
-                if (_lazyHeaders == null)
+                if (_createOnReadWriteHeaders == null)
                 {
-                    _lazyHeaders = new HeaderDictionary(
+                    _createOnReadWriteHeaders = new HeaderDictionary(
                         new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase));
                 }
 
-                return _lazyHeaders;
+                return _createOnReadWriteHeaders;
             }
         }
 
-        // TODO make these be backed by the actual headers.
-        public long? ContentLength { get; set; }
-        public string ContentType { get; set; }
+        public long? ContentLength
+        {
+            get
+            {
+                if (_createOnReadWriteHeaders == null)
+                {
+                    return null;
+                }
+                else
+                {
+                    // Parsing Helpers are not public (yet?), for the sake of this sample
+                    // temporarily hack something together
+                    return ParsingHelpers.GetContentLength(Headers);
+                }
+            }
+
+            set
+            {
+                Headers["Content-Length"] = value == null ? null : value.Value.ToString("D");
+            }
+        }
+
+        public string ContentType
+        {
+            get
+            {
+                return _createOnReadWriteHeaders?["Content-Type"];
+            }
+
+            set
+            {
+                Headers["Content-Type"] = value;
+            }
+        }
     }
 }

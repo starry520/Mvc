@@ -7,41 +7,16 @@ using Microsoft.AspNet.Http;
 
 namespace Microsoft.AspNet.Mvc
 {
-    public abstract class HttpActionResult : IHttpActionResult
+    // This class gets generated only at result execution time 
+    // (at the execution phase of the result filter)
+    public class HttpActionResult
     {
         private readonly ActionResultContext _resultContext;
-
-        public int? StatusCode
-        {
-            get { return _resultContext.StatusCode; }
-            set { _resultContext.StatusCode = value; }
-        }
-
-        public long? ContentLength
-        {
-            get { return _resultContext.ContentLength; }
-            set { _resultContext.ContentLength = value; }
-        }
-
-        public IHeaderDictionary Headers
-        {
-            get { return _resultContext.Headers; }
-        }
-
-        public string ContentType
-        {
-            get { return _resultContext.ContentType; }
-            set { _resultContext.ContentType = value; }
-        }
-
         private readonly IActionResult _innerResult;
-
-        public IActionResult InnerResult { get { return _innerResult; } }
 
         public HttpActionResult([NotNull] IActionResult innerResult) : this()
         {
             _innerResult = innerResult;
-            innerResult.PopulateHeaders(_resultContext);
         }
 
         public HttpActionResult()
@@ -52,6 +27,8 @@ namespace Microsoft.AspNet.Mvc
 
         public virtual async Task ExecuteResultAsync(ActionContext context)
         {
+            _innerResult.PopulateHeaders(_resultContext);
+
             ApplyHeaders(context);
 
             // first invoke the inner result then this one so the order of execution is predictable.
@@ -65,15 +42,11 @@ namespace Microsoft.AspNet.Mvc
             return Task.FromResult(true);
         }
 
-        public virtual void PopulateHeaders(ActionResultContext context)
-        {
-        }
-
         private void ApplyHeaders(ActionContext context)
         {
             var response = context.HttpContext.Response;
 
-            foreach (var header in _resultContext?.LazyHeaders)
+            foreach (var header in _resultContext?.CreateOnReadWriteHeaders)
             {
                 response.Headers.AppendValues(header.Key, header.Value);
             }
