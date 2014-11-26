@@ -23,6 +23,7 @@ namespace Microsoft.AspNet.Mvc.Description
         private readonly IOutputFormattersProvider _formattersProvider;
         private readonly IModelMetadataProvider _modelMetadataProvider;
         private readonly IInlineConstraintResolver _constraintResolver;
+        private readonly ICompositeModelBinder _compositeModelBinder;
 
         /// <summary>
         /// Creates a new instance of <see cref="DefaultApiDescriptionProvider"/>.
@@ -32,11 +33,13 @@ namespace Microsoft.AspNet.Mvc.Description
         public DefaultApiDescriptionProvider(
             IOutputFormattersProvider formattersProvider,
             IInlineConstraintResolver constraintResolver,
-            IModelMetadataProvider modelMetadataProvider)
+            IModelMetadataProvider modelMetadataProvider,
+            ICompositeModelBinder compositeModelBinder)
         {
             _formattersProvider = formattersProvider;
-            _modelMetadataProvider = modelMetadataProvider;
             _constraintResolver = constraintResolver;
+            _modelMetadataProvider = modelMetadataProvider; 
+            _compositeModelBinder = compositeModelBinder;
         }
 
         /// <inheritdoc />
@@ -82,7 +85,8 @@ namespace Microsoft.AspNet.Mvc.Description
 
             var templateParameters = parsedTemplate?.Parameters?.ToList() ?? new List<TemplatePart>();
 
-            GetParameters(apiDescription, action.Parameters, templateParameters);
+            var parameterContext = new ApiParameterContext(_modelMetadataProvider, action, templateParameters);
+            apiDescription.ParameterDescriptions.AddRange(GetParameters(parameterContext));
 
             var responseMetadataAttributes = GetResponseMetadataAttributes(action);
 
@@ -125,42 +129,17 @@ namespace Microsoft.AspNet.Mvc.Description
             return apiDescription;
         }
 
-        private void GetParameters(
-            ApiDescription apiDescription,
-            IList<ParameterDescriptor> parameterDescriptors,
-            IList<TemplatePart> templateParameters)
+        private List<ApiParameterDescription> GetParameters(ApiParameterContext context)
         {
-            if (parameterDescriptors != null)
+            var results = new List<ApiParameterDescription>();
+            var visitor = new PseudoModelBindingVisitor(_compositeModelBinder.ModelBinders, results);
+
+            foreach (var actionParameter in context.ActionParameters)
             {
-                foreach (var parameter in parameterDescriptors)
-                {
-                    // Process together parameters that appear on the path template and on the
-                    // action descriptor and do not come from the body.
-                    TemplatePart templateParameter = null;
-                    if (parameter.BinderMetadata as IFormatterBinderMetadata == null)
-                    {
-                        templateParameter = templateParameters
-                            .FirstOrDefault(p => p.Name.Equals(parameter.Name, StringComparison.OrdinalIgnoreCase));
-
-                        if (templateParameter != null)
-                        {
-                            templateParameters.Remove(templateParameter);
-                        }
-                    }
-
-                    apiDescription.ParameterDescriptions.Add(GetParameter(parameter, templateParameter));
-                }
+                visitor.WalkParameter(context, actionParameter);
             }
 
-            if (templateParameters.Count > 0)
-            {
-                // Process parameters that only appear on the path template if any.
-                foreach (var templateParameter in templateParameters)
-                {
-                    var parameterDescription = GetParameter(parameterDescriptor: null, templateParameter: templateParameter);
-                    apiDescription.ParameterDescriptions.Add(parameterDescription);
-                }
-            }
+            return results;
         }
 
         private IEnumerable<string> GetHttpMethods(ControllerActionDescriptor action)
@@ -214,118 +193,6 @@ namespace Microsoft.AspNet.Mvc.Description
             }
 
             return string.Join("/", segments);
-        }
-
-        private ApiParameterDescription GetParameter(
-            ParameterDescriptor parameterDescriptor,
-            TemplatePart templateParameter)
-        {
-            // This is a placeholder based on currently available functionality for parameters. See #886.
-            ApiParameterDescription parameterDescription = null;
-
-            if (templateParameter != null && parameterDescriptor == null)
-            {
-                // The parameter is part of the route template but not part of the ActionDescriptor.
-
-                // For now if a parameter is part of the template we will asume its value comes from the path.
-                // We will be more accurate when we implement #886.
-                parameterDescription = CreateParameterFromTemplate(templateParameter);
-            }
-            else if (templateParameter != null && parameterDescriptor != null)
-            {
-                // The parameter is part of the route template and part of the ActionDescriptor.
-                parameterDescription = CreateParameterFromTemplateAndParameterDescriptor(
-                    templateParameter,
-                    parameterDescriptor);
-            }
-            else if (templateParameter == null && parameterDescriptor != null)
-            {
-                // The parameter is part of the ActionDescriptor but is not part of the route template.
-                parameterDescription = CreateParameterFromParameterDescriptor(parameterDescriptor);
-            }
-            else
-            {
-                // We will never call this method with templateParameter == null && parameterDescriptor == null
-                Debug.Assert(parameterDescriptor != null);
-            }
-
-            if (parameterDescription.Type != null)
-            {
-                parameterDescription.ModelMetadata = _modelMetadataProvider.GetMetadataForType(
-                    modelAccessor: null,
-                    modelType: parameterDescription.Type);
-            }
-
-            return parameterDescription;
-        }
-
-        private static ApiParameterDescription CreateParameterFromParameterDescriptor(ParameterDescriptor parameter)
-        {
-            var resourceParameter = new ApiParameterDescription
-            {
-                IsOptional = parameter.IsOptional,
-                Name = parameter.Name,
-                ParameterDescriptor = parameter,
-                Type = parameter.ParameterType,
-            };
-
-            if (parameter.BinderMetadata as IFormatterBinderMetadata != null)
-            {
-                resourceParameter.Source = ApiParameterSource.Body;
-            }
-            else
-            {
-                resourceParameter.Source = ApiParameterSource.Query;
-            }
-
-            return resourceParameter;
-        }
-
-        private ApiParameterDescription CreateParameterFromTemplateAndParameterDescriptor(
-            TemplatePart templateParameter,
-            ParameterDescriptor parameter)
-        {
-            var resourceParameter = new ApiParameterDescription
-            {
-                Source = ApiParameterSource.Path,
-                IsOptional = parameter.IsOptional && IsOptionalParameter(templateParameter),
-                Name = parameter.Name,
-                ParameterDescriptor = parameter,
-                Constraints = GetConstraints(_constraintResolver, templateParameter.InlineConstraints),
-                DefaultValue = templateParameter.DefaultValue,
-                Type = parameter.ParameterType,
-            };
-
-            return resourceParameter;
-        }
-
-        private static IEnumerable<IRouteConstraint> GetConstraints(
-            IInlineConstraintResolver constraintResolver,
-            IEnumerable<InlineConstraint> constraints)
-        {
-            return
-                constraints
-                .Select(c => constraintResolver.ResolveConstraint(c.Constraint))
-                .Where(c => c != null)
-                .ToArray();
-        }
-
-        private static bool IsOptionalParameter(TemplatePart templateParameter)
-        {
-            return templateParameter.IsOptional || templateParameter.DefaultValue != null;
-        }
-
-        private ApiParameterDescription CreateParameterFromTemplate(TemplatePart templateParameter)
-        {
-            return new ApiParameterDescription
-            {
-                Source = ApiParameterSource.Path,
-                IsOptional = IsOptionalParameter(templateParameter),
-                Name = templateParameter.Name,
-                ParameterDescriptor = null,
-                Constraints = GetConstraints(_constraintResolver, templateParameter.InlineConstraints),
-                DefaultValue = templateParameter.DefaultValue,
-            };
         }
 
         private IReadOnlyList<ApiResponseFormat> GetResponseFormats(
@@ -450,6 +317,130 @@ namespace Microsoft.AspNet.Mvc.Description
                 .Select(fd => fd.Filter)
                 .OfType<IApiResponseMetadataProvider>()
                 .ToArray();
+        }
+
+        private class ApiParameterContext
+        {
+            public ApiParameterContext(
+                IModelMetadataProvider metadataProvider,
+                ControllerActionDescriptor actionDescriptor,
+                IReadOnlyList<TemplatePart> routeParameters)
+            {
+                MetadataProvider = metadataProvider;
+                ActionDescriptor = actionDescriptor;
+                RouteParameters = routeParameters;
+
+                ActionParameters = actionDescriptor.Parameters ?? new List<ParameterDescriptor>();
+            }
+
+            public ControllerActionDescriptor ActionDescriptor { get; }
+
+            public IReadOnlyList<ParameterDescriptor> ActionParameters { get; }
+
+            public IModelMetadataProvider MetadataProvider { get; }
+
+            public IReadOnlyList<TemplatePart> RouteParameters { get; }
+        }
+
+        private class PseudoModelBindingVisitor
+        {
+            public PseudoModelBindingVisitor(
+                IReadOnlyList<IModelBinder> modelBinders,
+                List<ApiParameterDescription> results)
+            {
+                ModelBinders = modelBinders;
+                Results = results;
+            }
+
+            public IReadOnlyList<IModelBinder> ModelBinders { get; }
+
+            public List<ApiParameterDescription> Results { get; }
+
+            public void WalkParameter(ApiParameterContext context, ParameterDescriptor parameter)
+            {
+                var modelMetadata = context.MetadataProvider.GetMetadataForParameter(
+                    modelAccessor: null,
+                    methodInfo: context.ActionDescriptor.MethodInfo,
+                    parameterName: parameter.Name,
+                    binderMetadata: parameter.BinderMetadata);
+
+                // Avoid infinite recursion
+                var visited = new HashSet<PropertyKey>();
+
+                if (!Visit(visited, modelMetadata))
+                {
+                    Results.Add(new ApiParameterDescription()
+                    {
+                        ModelMetadata = modelMetadata,
+                        Name = parameter.Name,
+                        ParameterDescriptor = parameter,
+                        Type = modelMetadata.ModelType,
+                    });
+                }
+            }
+
+            private bool Visit(ISet<PropertyKey> visited, ModelMetadata modelMetadata)
+            {
+                foreach (var binder in ModelBinders.OfType<IModelBinderMetadata>())
+                {
+                    if (binder.CanHasBindType(modelMetadata))
+                    {
+                        if (modelMetadata.BinderMetadata == null)
+                        {
+                            return false;
+                        }
+                        else
+                        {
+                            Results.Add(new ApiParameterDescription()
+                            {
+                                Type = modelMetadata.ModelType,
+                            });
+                        }
+                    }
+                }
+
+                // If there are no properties then we don't know how to bind this
+                if (!modelMetadata.Properties.Any())
+                {
+                    return false;
+                }
+
+                // This will come from composite model binding - so investigate what's going on with each property
+                var allPropertiesBound = true;
+                foreach (var propertyMetadata in modelMetadata.Properties)
+                {
+                    if (visited.Add(new PropertyKey(propertyMetadata.ContainerType, propertyMetadata.PropertyName)))
+                    {
+                        if (!Visit(visited, propertyMetadata))
+                        {
+                            allPropertiesBound = false;
+                        }
+
+                        if (propertyMetadata.BinderMetadata != null)
+                        {
+                            Results.Add(new ApiParameterDescription()
+                            {
+                                Type = propertyMetadata.ModelType,
+                            });
+                        }
+                    }
+                }
+
+                return allPropertiesBound;
+            }
+
+            private struct PropertyKey
+            {
+                public readonly Type ContainerType;
+
+                public readonly string PropertyName;
+
+                public PropertyKey(Type containerType, string propertyName)
+                {
+                    ContainerType = containerType;
+                    PropertyName = propertyName;
+                }
+            }
         }
     }
 }

@@ -621,7 +621,8 @@ namespace Microsoft.AspNet.Mvc.Description
             var provider = new DefaultApiDescriptionProvider(
                 formattersProvider.Object,
                 constraintResolver.Object,
-                modelMetadataProvider.Object);
+                modelMetadataProvider.Object,
+                Mock.Of<ICompositeModelBinder>());
 
             provider.Invoke(context, () => { });
             return context.Results;
