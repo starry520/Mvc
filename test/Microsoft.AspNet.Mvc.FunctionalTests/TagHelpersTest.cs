@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Reflection;
@@ -52,17 +53,40 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             Assert.Equal(expectedContent, responseContent);
         }
 
+        public static IEnumerable<object[]> TagHelpersAreInheritedFromViewStartPagesData
+        {
+            get
+            {
+                var expected1 =
+@"<root>root-content</root>
+
+
+<nested>nested-content</nested>";
+                yield return new[] { "NestedViewStartTagHelper", expected1 };
+
+                var expected2 =
+@"layout:<root>root-content</root>
+
+
+<nested>nested-content</nested>";
+
+                yield return new[] { "ViewWithLayoutAndNestedTagHelper", expected2 };
+
+                var expected3 =
+@"layout:<root>root-content</root>
+
+
+page:<root/>
+<nested>nested-content</nested>";
+                yield return new[] { "ViewWithInheritedRemoveTagHelper", expected3 };
+            }
+        }
+
         [Theory]
-        [InlineData("NestedViewStartTagHelper")]
-        [InlineData("ViewWithLayoutAndNestedTagHelper")]
-        public async Task TagHelpersAreInheritedFromViewStartPages(string action)
+        [MemberData(nameof(TagHelpersAreInheritedFromViewStartPagesData))]
+        public async Task TagHelpersAreInheritedFromViewStartPages(string action, string expected)
         {
             // Arrange
-            var expected = string.Join(Environment.NewLine,
-                                       "<root>root-content</root>",
-                                       "",
-                                       "",
-                                       "<nested>nested-content</nested>");
             var server = TestServer.Create(_provider, _app);
             var client = server.CreateClient();
 
