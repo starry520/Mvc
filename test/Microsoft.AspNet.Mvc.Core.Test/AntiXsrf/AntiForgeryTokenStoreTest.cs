@@ -236,6 +236,7 @@ namespace Microsoft.AspNet.Mvc.Core.Test
             formCollection.Setup(f => f["form-field-name"]).Returns("valid-value");
             requestContext.Setup(o => o.ReadFormAsync(CancellationToken.None))
                           .Returns(Task.FromResult(formCollection.Object));
+
             mockHttpContext.Setup(o => o.Request)
                            .Returns(requestContext.Object);
 
@@ -362,7 +363,7 @@ namespace Microsoft.AspNet.Mvc.Core.Test
             }
         }
 
-        private class MockCookieCollection : IReadableStringCollection
+        private class MockCookieCollection : IFormCollection
         {
             private Dictionary<string, string> _dictionary;
 
@@ -379,6 +380,14 @@ namespace Microsoft.AspNet.Mvc.Core.Test
                 get
                 {
                     return _dictionary.Keys;
+                }
+            }
+
+            public IFormFileCollection Files
+            {
+                get
+                {
+                    throw new NotImplementedException();
                 }
             }
 
