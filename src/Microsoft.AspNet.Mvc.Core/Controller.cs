@@ -94,9 +94,6 @@ namespace Microsoft.AspNet.Mvc
         [Activate]
         public IUrlHelper Url { get; set; }
 
-        [Activate]
-        public IActionBindingContextProvider BindingContextProvider { get; set; }
-
         public IPrincipal User
         {
             get
@@ -796,7 +793,7 @@ namespace Microsoft.AspNet.Mvc
         }
 
         /// <summary>
-        /// Updates the specified <paramref name="model"/> instance using values from the controller's current
+        /// Updates the specified <paramref name="model"/> instance using values from the controller's current 
         /// <see cref="IValueProvider"/>.
         /// </summary>
         /// <typeparam name="TModel">The type of the model object.</typeparam>
@@ -810,7 +807,7 @@ namespace Microsoft.AspNet.Mvc
         }
 
         /// <summary>
-        /// Updates the specified <paramref name="model"/> instance using values from the controller's current
+        /// Updates the specified <paramref name="model"/> instance using values from the controller's current 
         /// <see cref="IValueProvider"/> and a <paramref name="prefix"/>.
         /// </summary>
         /// <typeparam name="TModel">The type of the model object.</typeparam>
@@ -823,19 +820,19 @@ namespace Microsoft.AspNet.Mvc
                                                                     [NotNull] string prefix)
             where TModel : class
         {
-            if (BindingContextProvider == null)
+            if (ActionContext.BindingContext == null)
             {
-                var message = Resources.FormatPropertyOfTypeCannotBeNull(nameof(BindingContextProvider),
-                                                                         GetType().FullName);
+                var message = Resources.FormatPropertyOfTypeCannotBeNull(
+                    nameof(ActionContext.BindingContext),
+                    typeof(ActionContext).FullName);
                 throw new InvalidOperationException(message);
             }
 
-            var bindingContext = await BindingContextProvider.GetActionBindingContextAsync(ActionContext);
-            return await TryUpdateModelAsync(model, prefix, bindingContext.ValueProvider);
+            return await TryUpdateModelAsync(model, prefix, ActionContext.BindingContext.ValueProvider);
         }
 
         /// <summary>
-        /// Updates the specified <paramref name="model"/> instance using the <paramref name="valueProvider"/> and a
+        /// Updates the specified <paramref name="model"/> instance using the <paramref name="valueProvider"/> and a 
         /// <paramref name="prefix"/>.
         /// </summary>
         /// <typeparam name="TModel">The type of the model object.</typeparam>
@@ -850,33 +847,34 @@ namespace Microsoft.AspNet.Mvc
                                                                     [NotNull] IValueProvider valueProvider)
             where TModel : class
         {
-            if (BindingContextProvider == null)
+            if (ActionContext.BindingContext == null)
             {
-                var message = Resources.FormatPropertyOfTypeCannotBeNull(nameof(BindingContextProvider),
-                                                                         GetType().FullName);
+                var message = Resources.FormatPropertyOfTypeCannotBeNull(
+                    nameof(ActionContext.BindingContext),
+                    typeof(ActionContext).FullName);
                 throw new InvalidOperationException(message);
             }
 
-            var bindingContext = await BindingContextProvider.GetActionBindingContextAsync(ActionContext);
-            return await ModelBindingHelper.TryUpdateModelAsync(model,
+            return await ModelBindingHelper.TryUpdateModelAsync(
+                model,
                                                                 prefix,
                                                                 ActionContext.HttpContext,
                                                                 ModelState,
-                                                                bindingContext.MetadataProvider,
-                                                                bindingContext.ModelBinder,
+                ActionContext.BindingContext.MetadataProvider,
+                ActionContext.BindingContext.ModelBinder,
                                                                 valueProvider,
-                                                                bindingContext.ValidatorProvider);
+                ActionContext.BindingContext.ValidatorProvider);
         }
 
         /// <summary>
-        /// Updates the specified <paramref name="model"/> instance using values from the controller's current
+        /// Updates the specified <paramref name="model"/> instance using values from the controller's current 
         /// <see cref="IValueProvider"/> and a <paramref name="prefix"/>.
         /// </summary>
         /// <typeparam name="TModel">The type of the model object.</typeparam>
         /// <param name="model">The model instance to update.</param>
         /// <param name="prefix">The prefix to use when looking up values in the current <see cref="IValueProvider"/>.
         /// </param>
-        /// <param name="includeExpressions"> <see cref="Expression"/>(s) which represent top-level properties
+        /// <param name="includeExpressions"> <see cref="Expression"/>(s) which represent top-level properties 
         /// which need to be included for the current model.</param>
         /// <returns>A <see cref="Task"/> that on completion returns <c>true</c> if the update is successful</returns>
         [NonAction]
@@ -886,27 +884,28 @@ namespace Microsoft.AspNet.Mvc
             [NotNull] params Expression<Func<TModel, object>>[] includeExpressions)
            where TModel : class
         {
-            if (BindingContextProvider == null)
+            if (ActionContext.BindingContext == null)
             {
-                var message = Resources.FormatPropertyOfTypeCannotBeNull(nameof(BindingContextProvider),
-                                                                         GetType().FullName);
+                var message = Resources.FormatPropertyOfTypeCannotBeNull(
+                    nameof(ActionContext.BindingContext),
+                    typeof(ActionContext).FullName);
                 throw new InvalidOperationException(message);
             }
 
-            var bindingContext = await BindingContextProvider.GetActionBindingContextAsync(ActionContext);
-            return await ModelBindingHelper.TryUpdateModelAsync(model,
+            return await ModelBindingHelper.TryUpdateModelAsync(
+                model,
                                                                 prefix,
                                                                 ActionContext.HttpContext,
                                                                 ModelState,
-                                                                bindingContext.MetadataProvider,
-                                                                bindingContext.ModelBinder,
-                                                                bindingContext.ValueProvider,
-                                                                bindingContext.ValidatorProvider,
+                ActionContext.BindingContext.MetadataProvider,
+                ActionContext.BindingContext.ModelBinder,
+                ActionContext.BindingContext.ValueProvider,
+                ActionContext.BindingContext.ValidatorProvider,
                                                                 includeExpressions);
         }
 
         /// <summary>
-        /// Updates the specified <paramref name="model"/> instance using values from the controller's current
+        /// Updates the specified <paramref name="model"/> instance using values from the controller's current 
         /// <see cref="IValueProvider"/> and a <paramref name="prefix"/>.
         /// </summary>
         /// <typeparam name="TModel">The type of the model object.</typeparam>
@@ -922,27 +921,29 @@ namespace Microsoft.AspNet.Mvc
             [NotNull] Func<ModelBindingContext, string, bool> predicate)
             where TModel : class
         {
-            if (BindingContextProvider == null)
+            if (ActionContext.BindingContext == null)
             {
-                var message = Resources.FormatPropertyOfTypeCannotBeNull(nameof(BindingContextProvider),
-                                                                         GetType().FullName);
+                var message = Resources.FormatPropertyOfTypeCannotBeNull(
+                    nameof(ActionContext.BindingContext),
+                    typeof(ActionContext).FullName);
                 throw new InvalidOperationException(message);
             }
 
-            var bindingContext = await BindingContextProvider.GetActionBindingContextAsync(ActionContext);
-            return await ModelBindingHelper.TryUpdateModelAsync(model,
+
+            return await ModelBindingHelper.TryUpdateModelAsync(
+                model,
                                                                 prefix,
                                                                 ActionContext.HttpContext,
                                                                 ModelState,
-                                                                bindingContext.MetadataProvider,
-                                                                bindingContext.ModelBinder,
-                                                                bindingContext.ValueProvider,
-                                                                bindingContext.ValidatorProvider,
+                ActionContext.BindingContext.MetadataProvider,
+                ActionContext.BindingContext.ModelBinder,
+                ActionContext.BindingContext.ValueProvider,
+                ActionContext.BindingContext.ValidatorProvider,
                                                                 predicate);
         }
 
         /// <summary>
-        /// Updates the specified <paramref name="model"/> instance using the <paramref name="valueProvider"/> and a
+        /// Updates the specified <paramref name="model"/> instance using the <paramref name="valueProvider"/> and a 
         /// <paramref name="prefix"/>.
         /// </summary>
         /// <typeparam name="TModel">The type of the model object.</typeparam>
@@ -950,7 +951,7 @@ namespace Microsoft.AspNet.Mvc
         /// <param name="prefix">The prefix to use when looking up values in the <paramref name="valueProvider"/>
         /// </param>
         /// <param name="valueProvider">The <see cref="IValueProvider"/> used for looking up values.</param>
-        /// <param name="includeExpressions"> <see cref="Expression"/>(s) which represent top-level properties
+        /// <param name="includeExpressions"> <see cref="Expression"/>(s) which represent top-level properties 
         /// which need to be included for the current model.</param>
         /// <returns>A <see cref="Task"/> that on completion returns <c>true</c> if the update is successful</returns>
         [NonAction]
@@ -961,27 +962,28 @@ namespace Microsoft.AspNet.Mvc
             [NotNull] params Expression<Func<TModel, object>>[] includeExpressions)
            where TModel : class
         {
-            if (BindingContextProvider == null)
+            if (ActionContext.BindingContext == null)
             {
-                var message = Resources.FormatPropertyOfTypeCannotBeNull(nameof(BindingContextProvider),
-                                                                         GetType().FullName);
+                var message = Resources.FormatPropertyOfTypeCannotBeNull(
+                    nameof(ActionContext.BindingContext),
+                    typeof(ActionContext).FullName);
                 throw new InvalidOperationException(message);
             }
 
-            var bindingContext = await BindingContextProvider.GetActionBindingContextAsync(ActionContext);
-            return await ModelBindingHelper.TryUpdateModelAsync(model,
+            return await ModelBindingHelper.TryUpdateModelAsync(
+                model,
                                                                 prefix,
                                                                 ActionContext.HttpContext,
                                                                 ModelState,
-                                                                bindingContext.MetadataProvider,
-                                                                bindingContext.ModelBinder,
+                ActionContext.BindingContext.MetadataProvider,
+                ActionContext.BindingContext.ModelBinder,
                                                                 valueProvider,
-                                                                bindingContext.ValidatorProvider,
+                ActionContext.BindingContext.ValidatorProvider,
                                                                 includeExpressions);
         }
 
         /// <summary>
-        /// Updates the specified <paramref name="model"/> instance using the <paramref name="valueProvider"/> and a
+        /// Updates the specified <paramref name="model"/> instance using the <paramref name="valueProvider"/> and a 
         /// <paramref name="prefix"/>.
         /// </summary>
         /// <typeparam name="TModel">The type of the model object.</typeparam>
@@ -999,22 +1001,23 @@ namespace Microsoft.AspNet.Mvc
             [NotNull] Func<ModelBindingContext, string, bool> predicate)
             where TModel : class
         {
-            if (BindingContextProvider == null)
+            if (ActionContext.BindingContext == null)
             {
-                var message = Resources.FormatPropertyOfTypeCannotBeNull(nameof(BindingContextProvider),
-                                                                         GetType().FullName);
+                var message = Resources.FormatPropertyOfTypeCannotBeNull(
+                    nameof(ActionContext.BindingContext),
+                    typeof(ActionContext).FullName);
                 throw new InvalidOperationException(message);
             }
 
-            var bindingContext = await BindingContextProvider.GetActionBindingContextAsync(ActionContext);
-            return await ModelBindingHelper.TryUpdateModelAsync(model,
+            return await ModelBindingHelper.TryUpdateModelAsync(
+                model,
                                                                 prefix,
                                                                 ActionContext.HttpContext,
                                                                 ModelState,
-                                                                bindingContext.MetadataProvider,
-                                                                bindingContext.ModelBinder,
+                ActionContext.BindingContext.MetadataProvider,
+                ActionContext.BindingContext.ModelBinder,
                                                                 valueProvider,
-                                                                bindingContext.ValidatorProvider,
+                ActionContext.BindingContext.ValidatorProvider,
                                                                 predicate);
         }
 
