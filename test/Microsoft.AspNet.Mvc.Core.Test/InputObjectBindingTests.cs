@@ -29,7 +29,7 @@ namespace Microsoft.AspNet.Mvc
             accessor.SetupGet(a => a.Options)
                     .Returns(mvcOptions);
             var validatorProvider = new DefaultModelValidatorProviderProvider(
-                accessor.Object, Mock.Of<ITypeActivator>(), Mock.Of<IServiceProvider>());
+                accessor.Object, Mock.Of<IOptionActivator<IModelValidatorProvider>>());
 
             Func<object, int> method = x => 1;
             var actionDescriptor = new ControllerActionDescriptor

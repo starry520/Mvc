@@ -7,7 +7,7 @@ namespace Microsoft.AspNet.Mvc
 {
     public class ViewDataDictionary<TModel> : ViewDataDictionary
     {
-        // References may not show up due to ITypeActivator use in RazorPageActivator.
+        // References may not show up due to ActivatorUtilities use in RazorPageActivator.
         /// <summary>
         /// Initializes a new instance of the <see cref="ViewDataDictionary{TModel}"/> class.
         /// </summary>
@@ -22,7 +22,7 @@ namespace Microsoft.AspNet.Mvc
         {
         }
 
-        // References may not show up due to ITypeActivator use in RazorPageActivator.
+        // References may not show up due to ActivatorUtilities use in RazorPageActivator.
         /// <summary>
         /// Initializes a new instance of the <see cref="ViewDataDictionary{TModel}"/> class based in part on an
         /// existing <see cref="ViewDataDictionary"/> instance.
