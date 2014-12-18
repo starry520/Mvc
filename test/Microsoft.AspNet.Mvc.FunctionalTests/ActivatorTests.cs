@@ -172,5 +172,21 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             Assert.Equal(typeof(InvalidOperationException).FullName, exception.ExceptionType);
             Assert.Equal(expectedMessage, exception.ExceptionMessage);
         }
+
+        [Fact]
+        public async Task TagHelperActivation_ActivateHtmlHelper_RendersProperly()
+        {
+            // Arrange
+            var server = TestServer.Create(_provider, _app);
+            var client = server.CreateClient();
+            var expected = "<div>\r\n    <span><input id=\"foo\" name=\"foo\" type=\"hidden\" value=\"test content\" />" + 
+                            "</span>\r\nFakeFakeFake</div>";
+
+            // Act
+            var body = await client.GetStringAsync("http://localhost/View/UseTagHelper");
+
+            // Assert
+            Assert.Equal(expected, body.Trim());
+        }
     }
 }
