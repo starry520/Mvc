@@ -5,7 +5,7 @@ using Microsoft.AspNet.Razor.TagHelpers;
 
 namespace ActivatorWebSite.TagHelpers
 {
-    [TagName("*")]
+    [TagName("span")]
     [ContentBehavior(ContentBehavior.Modify)]
     public class HiddenTagHelper : TagHelper
     {

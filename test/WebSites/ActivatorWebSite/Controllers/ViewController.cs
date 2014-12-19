@@ -48,7 +48,7 @@ namespace ActivatorWebSite
 
         public ViewResult UseTagHelper()
         {
-            Dummy d = new Dummy();
+            var d = new Dummy();
             d.Name = "Fake";
             return View(d);
         }

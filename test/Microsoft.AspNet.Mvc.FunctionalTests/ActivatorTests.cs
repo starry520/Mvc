@@ -179,8 +179,11 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             // Arrange
             var server = TestServer.Create(_provider, _app);
             var client = server.CreateClient();
-            var expected = "<div>\r\n    <span><input id=\"foo\" name=\"foo\" type=\"hidden\" value=\"test content\" />" + 
-                            "</span>\r\nFakeFakeFake</div>";
+            var expected = "<div>FakeFakeFake</div>" + 
+                           Environment.NewLine + 
+                           "<span>" + 
+                           "<input id=\"foo\" name=\"foo\" type=\"hidden\" value=\"test content\" />" + 
+                           "</span>";
 
             // Act
             var body = await client.GetStringAsync("http://localhost/View/UseTagHelper");

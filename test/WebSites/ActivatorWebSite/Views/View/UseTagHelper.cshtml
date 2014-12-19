@@ -1,12 +1,8 @@
 ﻿@using ActivatorWebSite.Models
 @model Dummy
 
-@{
-    ViewBag.Title = "Tag Helper Activation";
-}
-
 @addtaghelper "ActivatorWebSite"
 
-<div expression="Name" repeat="3">
-    <span hidecontent="true" name="foo">test content</span>
-</div>
+
+<div expression="Name" repeat="3"></div>
+<span hidecontent="true" name="foo">test content</span>
