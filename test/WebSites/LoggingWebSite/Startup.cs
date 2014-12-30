@@ -28,6 +28,8 @@ namespace LoggingWebSite
             // Set up application services
             app.UseServices(services =>
             {
+                services.AddSingleton<ILoggerFactory, LoggerFactory>();
+
                 services.AddElm();
 
                 // Add MVC services to the services container
@@ -48,5 +50,10 @@ namespace LoggingWebSite
                 routes.MapRoute("Default", "{controller=Home}/{action=Index}");
             });
         }
+    }
+
+    public class CustomElmStore : ElmStore
+    {
+        
     }
 }

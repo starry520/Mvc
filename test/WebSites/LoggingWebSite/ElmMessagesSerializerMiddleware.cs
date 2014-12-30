@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNet.Builder;
 using Microsoft.AspNet.Diagnostics.Elm;
 using Microsoft.AspNet.Http;
+using Microsoft.AspNet.WebUtilities;
 using Microsoft.Framework.DependencyInjection;
 using Microsoft.Framework.Logging;
 using Newtonsoft.Json;
@@ -18,7 +19,8 @@ namespace LoggingWebSite
     {
         private readonly RequestDelegate nextMiddleware;
         private List<LogMessage> _logMessages = null;
-        private const string ClientRequestTraceIdHeader = "ClientRequestTraceId";
+        private const string RequestTraceIdKey = "RequestTraceId";
+        private const string StartupLogsKey = "StartupLogs";
 
         public ElmMessagesSerializerMiddleware(RequestDelegate nextMiddleware)
         {
@@ -33,23 +35,37 @@ namespace LoggingWebSite
             var elmStore = context.RequestServices.GetService<ElmStore>();
             var activities = elmStore.GetActivities();
 
-            // Filter by client's request id trace header
-            string[] values = null;
-            string clientRequestTraceId;
-            if (context.Request.Headers.TryGetValue(ClientRequestTraceIdHeader, out values))
+            // filter to get only startup logs
+            if(context.Request.Query.ContainsKey(StartupLogsKey))
             {
-                clientRequestTraceId = values.First();
+                activities = activities.Where(activityContext =>
+                {
+                    if (activityContext.HttpInfo == null || activityContext.HttpInfo.RequestID == Guid.Empty)
+                    {
+                        return true;
+                    }
+
+                    return false;
+                });
+            }
+            // filter by client's request trace id
+            else if (context.Request.Query.ContainsKey(RequestTraceIdKey))
+            {
+                var clientRequestTraceId = context.Request.Query[RequestTraceIdKey];
 
                 if (!string.IsNullOrWhiteSpace(clientRequestTraceId))
                 {
                     activities = activities.Where(activityContext =>
                     {
-                        string[] headerValues = null;
-                        if (activityContext.HttpInfo != null
-                            && activityContext.HttpInfo.Headers != null
-                            && activityContext.HttpInfo.Headers.TryGetValue(ClientRequestTraceIdHeader, out headerValues))
+                        if(activityContext.HttpInfo != null && activityContext.HttpInfo.Query.HasValue)
                         {
-                            return headerValues.First().Equals(clientRequestTraceId, StringComparison.OrdinalIgnoreCase);
+                            var queryString = QueryHelpers.ParseQuery(activityContext.HttpInfo.Query.Value);
+
+                            if(queryString.ContainsKey(RequestTraceIdKey) &&
+                                queryString[RequestTraceIdKey].Equals(clientRequestTraceId, StringComparison.OrdinalIgnoreCase))
+                            {
+                                return true;
+                            }
                         }
 
                         return false;
@@ -130,14 +146,34 @@ namespace LoggingWebSite
         {
             _logMessages.Add(new LogMessage()
             {
-                HttpInfo = logInfo.ActivityContext?.HttpInfo,
+                RequestInfo = GetRequestInfo(logInfo.ActivityContext?.HttpInfo),
                 EventID = logInfo.EventID,
                 Message = logInfo.Message,
-                Name = logInfo.Name,
+                LoggerName = logInfo.Name,
                 Severity = logInfo.Severity,
                 State = logInfo.State,
                 Time = logInfo.Time
             });
+        }
+
+        private HttpRequestInfo GetRequestInfo(HttpInfo httpInfo)
+        {
+            if (httpInfo == null) return null;
+
+            var requestInfo = new HttpRequestInfo();
+            requestInfo.RequestID = httpInfo.RequestID;
+            requestInfo.StatusCode = httpInfo.StatusCode;
+            requestInfo.Scheme = httpInfo.Scheme;
+            requestInfo.Query = httpInfo.Query.Value;
+            requestInfo.Protocol = httpInfo.Protocol;
+            requestInfo.Path = httpInfo.Path.Value;
+            requestInfo.Method = httpInfo.Method;
+            requestInfo.Host = httpInfo.Host.Value;
+            requestInfo.Headers = httpInfo.Headers.ToList();
+            requestInfo.Cookies = httpInfo.Cookies.ToList();
+            requestInfo.ContentType = httpInfo.ContentType;
+
+            return requestInfo;
         }
     }
 }
