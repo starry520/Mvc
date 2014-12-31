@@ -14,18 +14,18 @@ namespace LoggingWebSite.Controllers
         public HomeController(ILoggerFactory loggerFactory)
         {
             _loggerFactory = loggerFactory;
-            _logger = _loggerFactory.Create<HomeController>();
+            _logger = _loggerFactory.Create("blah");
         }
 
         public IActionResult Index()
         {
             _logger.WriteInformation("A");
 
-            using (_logger.BeginScope("'Scope 1'"))
+            using (_logger.BeginScope("Scope 1"))
             {
                 _logger.WriteInformation("B");
 
-                using (_logger.BeginScope("'Scope 1.1'"))
+                using (_logger.BeginScope("Scope 1.1"))
                 {
                     _logger.WriteInformation("C");
                 }

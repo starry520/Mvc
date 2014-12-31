@@ -10,8 +10,7 @@
         "Microsoft.AspNet.Server.IIS": "1.0.0-*",
         "Microsoft.AspNet.Server.WebListener": "1.0.0-*",
         "Microsoft.AspNet.StaticFiles": "1.0.0-*",
-        "Microsoft.AspNet.Diagnostics.Elm": "1.0.0-*",
-        "Microsoft.AspNet.WebUtilities": "1.0.0-*"
+        "Microsoft.Framework.Logging": "1.0.0-*"
     },
     "frameworks": {
         "aspnet50": { },

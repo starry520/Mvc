@@ -2,37 +2,34 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using ConnegWebSite;
+using LoggingWebSite;
+using LoggingWebSite.Controllers;
 using Microsoft.AspNet.Builder;
-using Microsoft.AspNet.Diagnostics.Elm;
-using Microsoft.AspNet.TestHost;
-using Microsoft.Framework.Logging;
-using Newtonsoft.Json;
-using Xunit;
-using Newtonsoft.Json.Linq;
+using Microsoft.AspNet.Mvc.ApplicationModels;
 using Microsoft.AspNet.Mvc.Logging;
+using Microsoft.AspNet.TestHost;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Xunit;
 
 namespace Microsoft.AspNet.Mvc.FunctionalTests
 {
     public class LoggingTests
     {
-        private readonly IServiceProvider _provider = TestHelper.CreateServices("LoggingWebSite");
+        private readonly IServiceProvider _serviceProvider = TestHelper.CreateServices("LoggingWebSite");
         private readonly Action<IApplicationBuilder> _app = new LoggingWebSite.Startup().Configure;
-        private const string RequestTraceIdKey = "RequestTraceId";
-        private const string StartupLogsKey = "StartupLogs";
-
+        
         [Fact]
-        public async Task StartupLogsTest()
+        public async Task AssemblyValues_LoggedAtStartup()
         {
             // Arrange
-            var server = TestServer.Create(_provider, _app);
+            var server = TestServer.Create(_serviceProvider, _app);
             var client = server.CreateClient();
-            var expectedLogMessages = new List<LogMessage>();
+            var expectedLogMessages = new List<MessageNode>();
 
             // Act & Assert
 
@@ -42,66 +39,113 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             var data = await response.Content.ReadAsStringAsync();
             Assert.Equal("Home.Index", data);
 
-            // request to get startup logs
-            response = await client.GetAsync(string.Format("http://localhost/elm-messages?{0}={1}",
-                                                    StartupLogsKey, "true"));
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            data = await response.Content.ReadAsStringAsync();
-            var logMessages = JsonConvert.DeserializeObject<IEnumerable<LogMessage>>(data);
+            // request to get logs and filter them to get only application Startup logs
+            var logEntries = await GetLogEntriesAsync(startup: true);
+            logEntries = logEntries.Where(entry => entry.RequestInfo == null
+                                                    && entry.StateType.Equals(typeof(AssemblyValues))).ToList();
 
-            // filter by 'Logger' name
-            logMessages = logMessages.Where(msg => 
-                            msg.LoggerName == "Microsoft.AspNet.Mvc.ControllerActionDescriptorProvider");
-
-            //Assert.Equal(1, logMessages.Count());
-            //var logMessage = logMessages.First();
-
-            //Assert.NotNull(logMessage.State);
-            //var controllerModelLog = logMessages.First().State.ToObject<ControllerModelValues>();
-
-            //Assert.Equal("Home", controllerModelLog.ControllerName);
+            foreach (var entry in logEntries)
+            {
+                dynamic assembly = entry.State;
+                Assert.NotNull(assembly);
+                Assert.Equal(
+                    "LoggingWebSite, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+                    assembly.AssemblyName.ToString());
+            }
         }
-    }
 
-    public class LogMessage
-    {
-        public int EventID { get; set; }
+        [Fact]
+        public async Task IsControllerValues_LoggedAtStartup()
+        {
+            // Arrange and Act
+            var logEntries = await GetLogEntriesAsync(startup: true);
+            logEntries = logEntries.Where(entry => entry.StateType.Equals(typeof(DefaultControllerModelBuilder)));
 
-        public string Message { get; set; }
+            // Assert
+            foreach (var entry in logEntries)
+            {
+                dynamic isController = entry.State;
+                if (string.Equals(typeof(HomeController).AssemblyQualifiedName, isController.Type.ToString()))
+                {
+                    Assert.Equal(
+                        ControllerStatus.IsController,
+                        Enum.Parse(typeof(ControllerStatus), isController.Status.ToString()));
+                }
+                else
+                {
+                    Assert.NotEqual(ControllerStatus.IsController,
+                        Enum.Parse(typeof(ControllerStatus), isController.Status.ToString()));
+                }
+            }
+        }
 
-        public string LoggerName { get; set; }
+        [Fact]
+        public async Task ControllerModelValues_LoggedAtStartup()
+        {
+            // Arrange and Act
+            var logEntries = await GetLogEntriesAsync(startup: true);
+            logEntries = logEntries.Where(entry => entry.StateType.Equals(typeof(ControllerModelValues)));
 
-        public LogLevel Severity { get; set; }
+            // Assert
+            Assert.Single(logEntries);
+            dynamic controller = logEntries.First().State;
+            Assert.Equal("Home", controller.ControllerName.ToString());
+            Assert.Equal(typeof(HomeController).AssemblyQualifiedName, controller.ControllerType.ToString());
+            Assert.Equal("Index", controller.Actions[0].ActionName.ToString());
+            Assert.Empty(controller.ApiExplorer.IsVisible);
+            Assert.Empty(controller.ApiExplorer.GroupName.ToString());
+            Assert.Empty(controller.Attributes);
+            Assert.Empty(controller.Filters);
+            Assert.Empty(controller.ActionConstraints);
+            Assert.Empty(controller.RouteConstraints);
+            Assert.Empty(controller.AttributeRoutes);
+        }
 
-        public JObject State { get; set; }
+        [Fact]
+        public async Task ActionDescriptorValues_LoggedAtStartup()
+        {
+            // Arrange and Act
+            var logEntries = await GetLogEntriesAsync(startup: true);
+            logEntries = logEntries.Where(entry => entry.StateType.Equals(typeof(ActionDescriptorValues)));
 
-        public DateTimeOffset Time { get; set; }
+            // Assert
+            Assert.Single(logEntries);
+            dynamic action = logEntries.First().State;
+            Assert.Equal("Index", action.Name.ToString());
+            Assert.Empty(action.Parameters);
+            Assert.Empty(action.FilterDescriptors);
+            Assert.Equal("controller", action.RouteConstraints[0].RouteKey.ToString());
+            Assert.Equal("action", action.RouteConstraints[1].RouteKey.ToString());
+            Assert.Empty(action.RouteValueDefaults);
+            Assert.Empty(action.ActionConstraints.ToString());
+            Assert.Empty(action.HttpMethods.ToString());
+            Assert.Empty(action.Properties);
+            Assert.Equal("Home", action.ControllerName.ToString());
+        }
 
-        public HttpRequestInfo RequestInfo { get; set; }
-    }
+        private async Task<IEnumerable<MessageNode>> GetLogEntriesAsync(bool startup = false, Guid? requestTraceId = null)
+        {
+            // Arrange
+            var server = TestServer.Create(_serviceProvider, _app);
+            var client = server.CreateClient();
 
-    public class HttpRequestInfo
-    {
-        public Guid RequestID { get; set; }
+            if (startup)
+            {
+                client.DefaultRequestHeaders.Add("Startup", "true");
+            }
+            else if( requestTraceId != null)
+            {
+                client.DefaultRequestHeaders.Add("RequestTraceId", requestTraceId.Value.ToString());
+            }
 
-        public string Host { get; set; }
+            // Act
+            var data = await client.GetStringAsync("http://localhost/logs");
 
-        public string Path { get; set; }
+            var logEntries = JsonConvert.DeserializeObject<IEnumerable<MessageNode>>(data, new StringEnumConverter());
 
-        public string ContentType { get; set; }
-
-        public string Scheme { get; set; }
-
-        public int StatusCode { get; set; }
-
-        public string Method { get; set; }
-
-        public string Protocol { get; set; }
-
-        public List<KeyValuePair<string, string[]>> Headers { get; set; }
-
-        public string Query { get; set; }
-
-        public List<KeyValuePair<string, string[]>> Cookies { get; set; }
+            // Assert
+            Assert.NotEmpty(logEntries);
+            return logEntries;
+        }
     }
 }
