@@ -8,87 +8,60 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
 {
     public static class LoggingExtensions
     {
-        /// <summary>
-        /// Gets ALL message nodes in the order that they are logged
-        /// </summary>
-        /// <param name="logEntries"></param>
-        /// <returns></returns>
-        public static IEnumerable<MessageNode> GetAllMessages(this IEnumerable<LogNode> logEntries)
+        private const string RequestTraceIdKey = "RequestTraceId";
+
+        public static IEnumerable<MessageNode> GetMessageNodes(this IEnumerable<LogNode> logEntries)
         {
             List<MessageNode> messageNodes = new List<MessageNode>();
 
             foreach (var logEntry in logEntries)
             {
-                Traverse(logEntry, messageNodes);
+                GetMessages(logEntry, messageNodes);
             }
 
             return messageNodes;
         }
 
-        /// <summary>
-        /// Gets ALL message nodes with the given request trace Id and in the order they are logged.
-        /// </summary>
-        /// <param name="logEntries"></param>
-        /// <param name="requestTraceId"></param>
-        /// <returns></returns>
-        public static IEnumerable<MessageNode> GetMessagesOfRequestTraceId(this IEnumerable<LogNode> logEntries, 
-                                                                            Guid requestTraceId)
+        public static IEnumerable<MessageNode> GetStartupMessageNodes(this IEnumerable<LogNode> logEntries)
         {
-            return logEntries.GetAllMessages()
-                             .Where(entry => entry.RequestInfo != null
-                                            && string.Equals(entry.RequestInfo.Query.GetQueryValue("RequestTraceId"),
-                                               requestTraceId.ToString(), 
-                                               StringComparison.OrdinalIgnoreCase));
+            logEntries = logEntries.Where(entry => entry.RequestInfo != null);
+
+            return logEntries.GetMessageNodes();
         }
 
-        //TODO: force GetMessagesUnderScope to only apply for ScopeNodes
-
-        public static IEnumerable<MessageNode> GetMessagesUnderScope(this IEnumerable<LogNode> logEntries,
-                                                                        Guid requestTraceId, string scopeName)
+        public static IEnumerable<MessageNode> GetMessageNodesWithRequestTraceId(this IEnumerable<LogNode> logEntries, 
+                                                                            Guid requestTraceId)
         {
             logEntries = logEntries.Where(entry => entry.RequestInfo != null
-                                                    && entry.RequestInfo.RequestID.Equals(requestTraceId));
+                                            && string.Equals(entry.RequestInfo.Query.GetQueryValue(RequestTraceIdKey),
+                                               requestTraceId.ToString(), 
+                                               StringComparison.OrdinalIgnoreCase));
 
+            return logEntries.GetMessageNodes();
+        }
+
+        public static IEnumerable<MessageNode> GetMessagesUnderScope(this IEnumerable<LogNode> logEntries, string scopeName)
+        {
+            // get list of scopes from the given list of log entries
             List<ScopeNode> scopeNodes = new List<ScopeNode>();
             foreach(var entry in logEntries)
             {
-                GetAllScopes(entry, scopeNodes);
+                GetScopes(entry, scopeNodes);
             }
 
+            //TODO: node state if non-string?
             var scopeNode = scopeNodes.FirstOrDefault(node => string.Equals(node.State?.ToString(), scopeName));
 
             List<MessageNode> messageNodes = new List<MessageNode>();
 
-            Traverse(scopeNode, messageNodes);
+            // get all messages under the found scope node
+            GetMessages(scopeNode, messageNodes);
 
             return messageNodes;
         }
+        
 
-        ///// <summary>
-        ///// Gets all the message nodes under a supplied scope
-        ///// </summary>
-        ///// <param name="scopeNodes"></param>
-        ///// <param name="scopeName"></param>
-        ///// <returns></returns>
-        //public static IEnumerable<MessageNode> GetMessagesUnderScope(this IEnumerable<ScopeNode> scopeNodes, 
-        //                                                            string scopeName)
-        //{
-        //    //TODO: what if state is null
-        //    var scopeNode = scopeNodes.Where(node => string.Equals(node.State?.ToString(), scopeName))
-        //                              .FirstOrDefault();
-        //    if (scopeNode == null)
-        //    {
-        //        throw new Exception(string.Format("No scope with name '{0}' was found.", scopeName));
-        //    }
-
-        //    List<MessageNode> messageNodes = new List<MessageNode>();
-
-        //    Traverse(scopeNode, messageNodes);
-
-        //    return messageNodes;
-        //}
-
-        private static void Traverse(LogNode node, List<MessageNode> messageNodes)
+        private static void GetMessages(LogNode node, List<MessageNode> messageNodes)
         {
             var messageNode = node as MessageNode;
             if (messageNode != null)
@@ -99,11 +72,11 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
 
             foreach (var childNode in ((ScopeNode)node).Children)
             {
-                Traverse(childNode, messageNodes);
+                GetMessages(childNode, messageNodes);
             }
         }
 
-        private static void GetAllScopes(LogNode node, List<ScopeNode> scopeNodes)
+        private static void GetScopes(LogNode node, List<ScopeNode> scopeNodes)
         {
             var scopeNode = node as ScopeNode;
             if(scopeNode == null)
@@ -115,7 +88,7 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
 
             foreach (var childNode in scopeNode.Children)
             {
-                GetAllScopes(childNode, scopeNodes);
+                GetScopes(childNode, scopeNodes);
             }
         }
 
