@@ -38,7 +38,7 @@ namespace LoggingWebSite
                 LoggerName = _loggerName,
                 EventID = eventId,
                 State = state,
-                StateType = state != null ? state.GetType() : null,
+                StateType = state?.GetType(),
                 Exception = exception,
                 LogLevel = logLevel,
 #if ASPNET50 || ASPNETCORE50

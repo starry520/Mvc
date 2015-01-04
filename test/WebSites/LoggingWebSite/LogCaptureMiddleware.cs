@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Builder;
 using Microsoft.AspNet.Http;
@@ -35,9 +36,9 @@ namespace LoggingWebSite
                 Scheme = request.Scheme,
                 Method = request.Method,
                 Protocol = request.Protocol,
-                Headers = request.Headers,
-                Query = request.Query,
-                Cookies = request.Cookies
+                Headers = request.Headers.ToArray(),
+                Query = request.Query.ToArray(),
+                Cookies = request.Cookies.ToArray()
             };
         }
     }

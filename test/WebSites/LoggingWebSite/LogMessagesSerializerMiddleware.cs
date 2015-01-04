@@ -1,9 +1,13 @@
-﻿using System.IO;
+﻿using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Builder;
 using Microsoft.AspNet.Http;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace LoggingWebSite
 {
@@ -23,7 +27,6 @@ namespace LoggingWebSite
 
             var serializer = JsonSerializer.Create();
             serializer.Formatting = Formatting.Indented; //for readability
-            serializer.TypeNameHandling = TypeNameHandling.Objects;
             using (var writer = new JsonTextWriter(new StreamWriter(stream: context.Response.Body,
                                                                     encoding: Encoding.UTF8,
                                                                     bufferSize: 1024,

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -15,6 +16,7 @@ using Microsoft.AspNet.Mvc.Logging;
 using Microsoft.AspNet.TestHost;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using Xunit;
 
@@ -31,6 +33,7 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             var logEntries = await GetStartupLogs();
             logEntries = logEntries.Where(entry => entry.StateType.Equals(typeof(AssemblyValues)));
 
+            Assert.NotEmpty(logEntries);
             foreach (var entry in logEntries)
             {
                 dynamic assembly = entry.State;
@@ -45,9 +48,10 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
         public async Task IsControllerValues_LoggedAtStartup()
         {
             var logEntries = await GetStartupLogs();
-            logEntries = logEntries.Where(entry => entry.StateType.Equals(typeof(DefaultControllerModelBuilder)));
+            logEntries = logEntries.Where(entry => entry.StateType.Equals(typeof(IsControllerValues)));
 
             // Assert
+            Assert.NotEmpty(logEntries);
             foreach (var entry in logEntries)
             {
                 dynamic isController = entry.State;
@@ -123,8 +127,10 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
 
             // get all logs from the sink
             data = await client.GetStringAsync("http://localhost/logs");
+
             var serializerSettings = new JsonSerializerSettings();
-            serializerSettings.TypeNameHandling = TypeNameHandling.Objects;
+            serializerSettings.Converters.Insert(0, new LogNodeConverter());
+            
             var allLogEntries = JsonConvert.DeserializeObject<IEnumerable<LogNode>>(data, serializerSettings);
 
             // get a flattened list of message nodes withouting the scoping nodes information.
@@ -134,6 +140,45 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             messageLogs = messageLogs.Where(entry => entry.RequestInfo == null);
 
             return messageLogs;
+        }
+    }
+
+    public class LogNodeConverter : JsonConverter
+    {
+        public override bool CanConvert(Type objectType)
+        {
+            return typeof(LogNode).IsAssignableFrom(objectType);
+        }
+
+        public override object ReadJson(JsonReader reader, 
+                                        Type objectType,
+                                        object existingValue, 
+                                        JsonSerializer serializer)
+        {
+            //if(reader.TokenType == JsonToken.Null)
+            //{
+            //    return null;
+            //}
+
+            var jObject = JObject.Load(reader);
+
+            LogNode target = null;
+            if (jObject["Children"] != null)
+            {
+                target = new ScopeNode();
+            }
+
+            target = new MessageNode();
+
+            serializer.Populate(jObject.CreateReader(), target);
+            return target;
+        }
+
+        public override void WriteJson(JsonWriter writer, 
+                                        object value,
+                                        JsonSerializer serializer)
+        {
+            throw new NotImplementedException();
         }
     }
 }

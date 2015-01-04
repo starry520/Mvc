@@ -67,7 +67,8 @@ namespace LoggingWebSite
 
             CurrentScope.ScopeNode = new ScopeNode()
             {
-                State = CurrentScope.State
+                State = CurrentScope.State,
+                StateType = CurrentScope.State?.GetType()
             };
 
             if (CurrentScope.ParentScope != null)
