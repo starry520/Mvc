@@ -80,9 +80,6 @@ namespace LoggingWebSite
                 sink.LogEntries.Add(CurrentScope.ScopeNode);
             }
 
-            // add to the flat list of scope nodes
-            sink.ScopeNodes.Add(CurrentScope.ScopeNode);
-
             return new DisposableAction(() =>
             {
                 CurrentScope = CurrentScope.ParentScope;
