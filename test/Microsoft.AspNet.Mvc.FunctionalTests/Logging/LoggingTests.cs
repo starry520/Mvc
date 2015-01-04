@@ -25,6 +25,7 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
         [Fact]
         public async Task AssemblyValues_LoggedAtStartup()
         {
+            // Arrange and Act
             var logEntries = await GetStartupLogs();
             logEntries = logEntries.Where(entry => entry.StateType.Equals(typeof(AssemblyValues)));
 
@@ -42,6 +43,7 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
         [Fact]
         public async Task IsControllerValues_LoggedAtStartup()
         {
+            // Arrange and Act
             var logEntries = await GetStartupLogs();
             logEntries = logEntries.Where(entry => entry.StateType.Equals(typeof(IsControllerValues)));
 
@@ -114,8 +116,11 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             var server = TestServer.Create(_serviceProvider, _app);
             var client = server.CreateClient();
 
-            // regular request
+            // Act
+            // regular request to kick start log generation
             var response = await client.GetAsync("http://localhost/Home/Index");
+
+            // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var data = await response.Content.ReadAsStringAsync();
             Assert.Equal("Home.Index", data);
