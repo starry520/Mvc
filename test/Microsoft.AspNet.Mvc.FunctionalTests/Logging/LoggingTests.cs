@@ -3,21 +3,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using LoggingWebSite;
 using LoggingWebSite.Controllers;
 using Microsoft.AspNet.Builder;
-using Microsoft.AspNet.Mvc.ApplicationModels;
 using Microsoft.AspNet.Mvc.Logging;
 using Microsoft.AspNet.TestHost;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
 using Xunit;
 
 namespace Microsoft.AspNet.Mvc.FunctionalTests
@@ -129,56 +124,18 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             data = await client.GetStringAsync("http://localhost/logs");
 
             var serializerSettings = new JsonSerializerSettings();
-            serializerSettings.Converters.Insert(0, new LogNodeConverter());
+            serializerSettings.Converters.Insert(0, new LogNodeJsonConverter());
             
-            var allLogEntries = JsonConvert.DeserializeObject<IEnumerable<LogNode>>(data, serializerSettings);
+            var allLogEntries = JsonConvert.DeserializeObject<IEnumerable<LogNode>>(data, 
+                                                                                    serializerSettings);
 
-            // get a flattened list of message nodes withouting the scoping nodes information.
-            var messageLogs = allLogEntries.GetMessages();
+            // get a flattened list of message nodes without the scoping nodes information.
+            var messageLogs = allLogEntries.GetAllMessages();
 
             // filter to get only startup logs
             messageLogs = messageLogs.Where(entry => entry.RequestInfo == null);
 
             return messageLogs;
-        }
-    }
-
-    public class LogNodeConverter : JsonConverter
-    {
-        public override bool CanConvert(Type objectType)
-        {
-            return typeof(LogNode).IsAssignableFrom(objectType);
-        }
-
-        public override object ReadJson(JsonReader reader, 
-                                        Type objectType,
-                                        object existingValue, 
-                                        JsonSerializer serializer)
-        {
-            //if(reader.TokenType == JsonToken.Null)
-            //{
-            //    return null;
-            //}
-
-            var jObject = JObject.Load(reader);
-
-            LogNode target = null;
-            if (jObject["Children"] != null)
-            {
-                target = new ScopeNode();
-            }
-
-            target = new MessageNode();
-
-            serializer.Populate(jObject.CreateReader(), target);
-            return target;
-        }
-
-        public override void WriteJson(JsonWriter writer, 
-                                        object value,
-                                        JsonSerializer serializer)
-        {
-            throw new NotImplementedException();
         }
     }
 }
