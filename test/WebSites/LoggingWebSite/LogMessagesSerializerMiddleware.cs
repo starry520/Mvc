@@ -26,7 +26,6 @@ namespace LoggingWebSite
             context.Response.ContentType = "application/json";
 
             var serializer = JsonSerializer.Create();
-            serializer.Formatting = Formatting.Indented; //for readability
             using (var writer = new JsonTextWriter(new StreamWriter(stream: context.Response.Body,
                                                                     encoding: Encoding.UTF8,
                                                                     bufferSize: 1024,

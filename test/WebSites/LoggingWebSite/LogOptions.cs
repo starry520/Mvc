@@ -1,5 +1,4 @@
 ﻿using System;
-using Microsoft.AspNet.Http;
 using Microsoft.Framework.Logging;
 
 namespace LoggingWebSite

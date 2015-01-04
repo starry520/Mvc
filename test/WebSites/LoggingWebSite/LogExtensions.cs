@@ -1,10 +1,7 @@
-﻿using System.Linq;
-using System.Collections.Generic;
-using Microsoft.AspNet.Builder;
+﻿using Microsoft.AspNet.Builder;
 using Microsoft.Framework.DependencyInjection;
 using Microsoft.Framework.Logging;
 using Microsoft.Framework.OptionsModel;
-using System;
 
 namespace LoggingWebSite
 {
