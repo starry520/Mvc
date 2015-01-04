@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using LoggingWebSite;
 using LoggingWebSite.Controllers;
@@ -14,6 +15,7 @@ using Microsoft.AspNet.Mvc.Logging;
 using Microsoft.AspNet.TestHost;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 using Xunit;
 
 namespace Microsoft.AspNet.Mvc.FunctionalTests
@@ -22,27 +24,12 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
     {
         private readonly IServiceProvider _serviceProvider = TestHelper.CreateServices("LoggingWebSite");
         private readonly Action<IApplicationBuilder> _app = new LoggingWebSite.Startup().Configure;
-        
+
         [Fact]
         public async Task AssemblyValues_LoggedAtStartup()
         {
-            // Arrange
-            var server = TestServer.Create(_serviceProvider, _app);
-            var client = server.CreateClient();
-            var expectedLogMessages = new List<MessageNode>();
-
-            // Act & Assert
-
-            // regular request
-            var response = await client.GetAsync("http://localhost/Home/Index");
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            var data = await response.Content.ReadAsStringAsync();
-            Assert.Equal("Home.Index", data);
-
-            // request to get logs and filter them to get only application Startup logs
-            var logEntries = await GetLogEntriesAsync(startup: true);
-            logEntries = logEntries.Where(entry => entry.RequestInfo == null
-                                                    && entry.StateType.Equals(typeof(AssemblyValues))).ToList();
+            var logEntries = await GetStartupLogs();
+            logEntries = logEntries.Where(entry => entry.StateType.Equals(typeof(AssemblyValues)));
 
             foreach (var entry in logEntries)
             {
@@ -57,8 +44,7 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
         [Fact]
         public async Task IsControllerValues_LoggedAtStartup()
         {
-            // Arrange and Act
-            var logEntries = await GetLogEntriesAsync(startup: true);
+            var logEntries = await GetStartupLogs();
             logEntries = logEntries.Where(entry => entry.StateType.Equals(typeof(DefaultControllerModelBuilder)));
 
             // Assert
@@ -83,7 +69,7 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
         public async Task ControllerModelValues_LoggedAtStartup()
         {
             // Arrange and Act
-            var logEntries = await GetLogEntriesAsync(startup: true);
+            var logEntries = await GetStartupLogs();
             logEntries = logEntries.Where(entry => entry.StateType.Equals(typeof(ControllerModelValues)));
 
             // Assert
@@ -105,7 +91,7 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
         public async Task ActionDescriptorValues_LoggedAtStartup()
         {
             // Arrange and Act
-            var logEntries = await GetLogEntriesAsync(startup: true);
+            var logEntries = await GetStartupLogs();
             logEntries = logEntries.Where(entry => entry.StateType.Equals(typeof(ActionDescriptorValues)));
 
             // Assert
@@ -123,29 +109,31 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             Assert.Equal("Home", action.ControllerName.ToString());
         }
 
-        private async Task<IEnumerable<MessageNode>> GetLogEntriesAsync(bool startup = false, Guid? requestTraceId = null)
+        private async Task<IEnumerable<MessageNode>> GetStartupLogs()
         {
             // Arrange
             var server = TestServer.Create(_serviceProvider, _app);
             var client = server.CreateClient();
 
-            if (startup)
-            {
-                client.DefaultRequestHeaders.Add("Startup", "true");
-            }
-            else if( requestTraceId != null)
-            {
-                client.DefaultRequestHeaders.Add("RequestTraceId", requestTraceId.Value.ToString());
-            }
+            // regular request
+            var response = await client.GetAsync("http://localhost/Home/Index");
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var data = await response.Content.ReadAsStringAsync();
+            Assert.Equal("Home.Index", data);
 
-            // Act
-            var data = await client.GetStringAsync("http://localhost/logs");
+            // get all logs from the sink
+            data = await client.GetStringAsync("http://localhost/logs");
+            var serializerSettings = new JsonSerializerSettings();
+            serializerSettings.TypeNameHandling = TypeNameHandling.Objects;
+            var allLogEntries = JsonConvert.DeserializeObject<IEnumerable<LogNode>>(data, serializerSettings);
 
-            var logEntries = JsonConvert.DeserializeObject<IEnumerable<MessageNode>>(data, new StringEnumConverter());
+            // get a flattened list of message nodes withouting the scoping nodes information.
+            var messageLogs = allLogEntries.GetMessages();
 
-            // Assert
-            Assert.NotEmpty(logEntries);
-            return logEntries;
+            // filter to get only startup logs
+            messageLogs = messageLogs.Where(entry => entry.RequestInfo == null);
+
+            return messageLogs;
         }
     }
 }
