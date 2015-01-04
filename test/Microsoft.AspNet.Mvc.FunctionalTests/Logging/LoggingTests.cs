@@ -130,10 +130,7 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
                                                                                     serializerSettings);
 
             // get a flattened list of message nodes without the scoping nodes information.
-            var messageLogs = allLogEntries.GetMessageNodes();
-
-            // filter to get only startup logs
-            messageLogs = messageLogs.Where(entry => entry.RequestInfo == null);
+            var messageLogs = allLogEntries.GetStartupMessageNodes();
 
             return messageLogs;
         }

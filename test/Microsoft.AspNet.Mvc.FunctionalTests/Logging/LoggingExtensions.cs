@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using LoggingWebSite;
-using Microsoft.AspNet.WebUtilities.Collections;
 
 namespace Microsoft.AspNet.Mvc.FunctionalTests
 {
@@ -24,7 +23,7 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
 
         public static IEnumerable<MessageNode> GetStartupMessageNodes(this IEnumerable<LogNode> logEntries)
         {
-            logEntries = logEntries.Where(entry => entry.RequestInfo != null);
+            logEntries = logEntries.Where(entry => entry.RequestInfo == null);
 
             return logEntries.GetMessageNodes();
         }
