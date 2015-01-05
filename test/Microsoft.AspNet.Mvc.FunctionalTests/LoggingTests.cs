@@ -26,7 +26,7 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
         {
             // Arrange and Act
             var logs = await GetLogsForStartupAsync();
-            logs = logs.Where(c => c.StateType.Equals(typeof(AssemblyValues))).ToList();
+            logs = logs.Where(c => c.StateType.Equals(typeof(AssemblyValues)));
 
             // Assert
             Assert.NotEmpty(logs);
@@ -108,6 +108,26 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             Assert.Empty(action.HttpMethods.ToString());
             Assert.Empty(action.Properties);
             Assert.Equal("Home", action.ControllerName.ToString());
+        }
+
+        [Fact]
+        public async Task RazorView_Found()
+        {
+            // Arrange
+            var server = TestServer.Create(_services, _app);
+            var client = server.CreateClient();
+
+            // Act and Assert
+            var response = await client.GetStringAsync("http://localhost/Home/Index");
+            Assert.Equal("Home.Index", response);
+
+            // get logs
+            response = await client.GetStringAsync("http://localhost/logs");
+            var activityDtos = JsonConvert.DeserializeObject<List<ActivityContextDto>>(response);
+            var logInfos = GetAllLogInfos(activityDtos);
+
+            logInfos = logInfos.Where(logInfo => logInfo.StateType != null
+                                                && logInfo.StateType.Equals(typeof(ViewEngineValues)));
         }
 
         private async Task<IEnumerable<LogInfoDto>> GetLogsForStartupAsync()
