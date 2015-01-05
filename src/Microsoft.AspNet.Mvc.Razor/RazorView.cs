@@ -4,8 +4,10 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.AspNet.Mvc.Core.Logging;
 using Microsoft.AspNet.Mvc.Rendering;
 using Microsoft.AspNet.PageExecutionInstrumentation;
+using Microsoft.Framework.Logging;
 
 namespace Microsoft.AspNet.Mvc.Razor
 {
@@ -19,6 +21,8 @@ namespace Microsoft.AspNet.Mvc.Razor
         private readonly IRazorPageActivator _pageActivator;
         private readonly IViewStartProvider _viewStartProvider;
         private IPageExecutionListenerFeature _pageExecutionFeature;
+        private readonly ILogger _logger;
+
 
         /// <summary>
         /// Initializes a new instance of <see cref="RazorView"/>
@@ -26,12 +30,14 @@ namespace Microsoft.AspNet.Mvc.Razor
         /// <param name="viewEngine">The <see cref="IRazorViewEngine"/> used to locate Layout pages.</param>
         /// <param name="pageActivator">The <see cref="IRazorPageActivator"/> used to activate pages.</param>
         /// <param name="viewStartProvider">The <see cref="IViewStartProvider"/> used for discovery of _ViewStart
+        /// <param name="loggerFactory">TODO:</param>
         /// <param name="razorPage">The <see cref="IRazorPage"/> instance to execute.</param>
         /// <param name="isPartial">Determines if the view is to be executed as a partial.</param>
         /// pages</param>
         public RazorView(IRazorViewEngine viewEngine,
                          IRazorPageActivator pageActivator,
                          IViewStartProvider viewStartProvider,
+                         ILoggerFactory loggerFactory,
                          IRazorPage razorPage,
                          bool isPartial
             )
@@ -39,6 +45,7 @@ namespace Microsoft.AspNet.Mvc.Razor
             _viewEngine = viewEngine;
             _pageActivator = pageActivator;
             _viewStartProvider = viewStartProvider;
+            _logger = loggerFactory.Create<RazorView>();
             RazorPage = razorPage;
             IsPartial = isPartial;
         }
@@ -147,6 +154,12 @@ namespace Microsoft.AspNet.Mvc.Razor
             }
 
             _pageActivator.Activate(page, context);
+
+            if (_logger.IsEnabled(LogLevel.Verbose))
+            {
+                _logger.WriteVerbose(new ViewDataValues(context.ViewData, page.GetType()));
+            }
+
             await page.ExecuteAsync();
         }
 
