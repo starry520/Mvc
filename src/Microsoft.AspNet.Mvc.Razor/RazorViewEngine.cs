@@ -5,8 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using Microsoft.AspNet.Mvc.Logging;
 using Microsoft.AspNet.Mvc.Razor.OptionDescriptors;
 using Microsoft.AspNet.Mvc.Rendering;
+using Microsoft.Framework.Logging;
 
 namespace Microsoft.AspNet.Mvc.Razor
 {
@@ -38,8 +40,11 @@ namespace Microsoft.AspNet.Mvc.Razor
 
         private readonly IRazorPageFactory _pageFactory;
         private readonly IRazorViewFactory _viewFactory;
+
         private readonly IReadOnlyList<IViewLocationExpander> _viewLocationExpanders;
         private readonly IViewLocationCache _viewLocationCache;
+        private readonly ILogger _logger;
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RazorViewEngine" /> class.
@@ -47,11 +52,13 @@ namespace Microsoft.AspNet.Mvc.Razor
         /// <param name="pageFactory">The page factory used for creating <see cref="IRazorPage"/> instances.</param>
         public RazorViewEngine(IRazorPageFactory pageFactory,
                                IRazorViewFactory viewFactory,
+                               ILoggerFactory loggerFactory,
                                IViewLocationExpanderProvider viewLocationExpanderProvider,
                                IViewLocationCache viewLocationCache)
         {
             _pageFactory = pageFactory;
             _viewFactory = viewFactory;
+            _logger = loggerFactory.Create<RazorViewEngine>();
             _viewLocationExpanders = viewLocationExpanderProvider.ViewLocationExpanders;
             _viewLocationCache = viewLocationCache;
         }
@@ -189,6 +196,20 @@ namespace Microsoft.AspNet.Mvc.Razor
                 if (page != null)
                 {
                     // 2a. We found a IRazorPage at the cached location.
+
+                    if (_logger.IsEnabled(LogLevel.Verbose))
+                    {
+                        _logger.WriteVerbose(
+                            new ViewEngineValues(
+                                pageName,
+                                false, // TODO: fix this
+                                typeof(RazorViewEngine).FullName,
+                                context,
+                                new[] { pageLocation },
+                                found: true,
+                                cached: true));
+                    }
+
                     return new RazorPageResult(pageName, page);
                 }
             }
@@ -197,7 +218,14 @@ namespace Microsoft.AspNet.Mvc.Razor
             // The cached value has expired and we need to look up the page.
             foreach (var expander in _viewLocationExpanders)
             {
+                var locationsToExpand = viewLocations;
+
                 viewLocations = expander.ExpandViewLocations(expanderContext, viewLocations);
+
+                if (_logger.IsEnabled(LogLevel.Verbose))
+                {
+                    _logger.WriteVerbose(new ViewLocationExpanderValues(locationsToExpand, viewLocations));
+                }
             }
 
             // 3. Use the expanded locations to look up a page.
@@ -215,6 +243,20 @@ namespace Microsoft.AspNet.Mvc.Razor
                 {
                     // 3a. We found a page. Cache the set of values that produced it and return a found result.
                     _viewLocationCache.Set(expanderContext, transformedPath);
+
+                    if (_logger.IsEnabled(LogLevel.Verbose))
+                    {
+                        _logger.WriteVerbose(
+                            new ViewEngineValues(
+                                pageName,
+                                false, // TODO: fix this
+                                typeof(RazorViewEngine).FullName,
+                                context,
+                                searchedLocations,
+                                found: true,
+                                cached: false));
+                    }
+
                     return new RazorPageResult(pageName, page);
                 }
 
@@ -231,10 +273,35 @@ namespace Microsoft.AspNet.Mvc.Razor
         {
             if (result.SearchedLocations != null)
             {
+                if (_logger.IsEnabled(LogLevel.Verbose))
+                {
+                    _logger.WriteVerbose(
+                        new ViewEngineValues(
+                            requestedView: result.Name,
+                            isPartial: isPartial,
+                            viewEngine: typeof(RazorViewEngine).FullName,
+                            actionContext: null, //context, TODO
+                            searchedLocations: result.SearchedLocations,
+                            found: false));
+                }
+
                 return ViewEngineResult.NotFound(result.Name, result.SearchedLocations);
             }
 
             var view = razorViewFactory.GetView(this, result.Page, isPartial);
+
+            if (_logger.IsEnabled(LogLevel.Verbose))
+            {
+                _logger.WriteVerbose(
+                    new ViewEngineValues(
+                        requestedView: result.Name,
+                        isPartial: isPartial,
+                        viewEngine: typeof(RazorViewEngine).FullName,
+                        actionContext: null, //context, TODO
+                        searchedLocations: result.SearchedLocations,
+                        found: true));
+            }
+
             return ViewEngineResult.Found(result.Name, view);
         }
 

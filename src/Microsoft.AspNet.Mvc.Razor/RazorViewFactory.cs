@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using Microsoft.AspNet.Mvc.Rendering;
+using Microsoft.Framework.Logging;
 
 namespace Microsoft.AspNet.Mvc.Razor
 {
@@ -11,6 +12,7 @@ namespace Microsoft.AspNet.Mvc.Razor
     /// </summary>
     public class RazorViewFactory : IRazorViewFactory
     {
+        private readonly ILoggerFactory _loggerFactory;
         private readonly IRazorPageActivator _pageActivator;
         private readonly IViewStartProvider _viewStartProvider;
 
@@ -21,10 +23,12 @@ namespace Microsoft.AspNet.Mvc.Razor
         /// <param name="viewStartProvider">The <see cref="IViewStartProvider"/> used for discovery of _ViewStart
         /// pages</param>
         public RazorViewFactory(IRazorPageActivator pageActivator,
-                                IViewStartProvider viewStartProvider)
+                                IViewStartProvider viewStartProvider,
+                                ILoggerFactory loggerFactory)
         {
             _pageActivator = pageActivator;
             _viewStartProvider = viewStartProvider;
+            _loggerFactory = loggerFactory;
         }
 
         /// <inheritdoc />
@@ -32,7 +36,7 @@ namespace Microsoft.AspNet.Mvc.Razor
                              [NotNull] IRazorPage page,
                              bool isPartial)
         {
-            var razorView = new RazorView(viewEngine, _pageActivator, _viewStartProvider, page, isPartial);
+            var razorView = new RazorView(viewEngine, _pageActivator, _viewStartProvider, _loggerFactory, page, isPartial);
             return razorView;
         }
     }
