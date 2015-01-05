@@ -25,9 +25,9 @@ namespace Microsoft.AspNet.Mvc.Logging
             IsPartial = isPartial;
             ViewEngineTypeName = viewEngine;
             IsFound = found;
-            ControllerType = actionContext.Controller?.GetType();
+            ControllerType = actionContext?.Controller?.GetType();
             IsCached = cached;
-            ActionDescriptor = new ActionDescriptorValues(actionContext.ActionDescriptor);
+            //ActionDescriptor = new ActionDescriptorValues(actionContext.ActionDescriptor);
         }
 
         /// <summary>

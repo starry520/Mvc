@@ -111,14 +111,19 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
         }
 
         [Fact]
-        public async Task RazorView_Found()
+        public async Task RazorView_Found_Cached()
         {
             // Arrange
             var server = TestServer.Create(_services, _app);
             var client = server.CreateClient();
+            var request1TraceId = Guid.NewGuid().ToString();
+            var request2TraceId = Guid.NewGuid().ToString();
 
             // Act and Assert
-            var response = await client.GetStringAsync("http://localhost/Home/Index");
+            var response = await client.GetStringAsync("http://localhost/Home/Index?RequestTraceId=" + request1TraceId);
+            Assert.Equal("Home.Index", response);
+
+            response = await client.GetStringAsync("http://localhost/Home/Index?RequestTraceId=" + request2TraceId);
             Assert.Equal("Home.Index", response);
 
             // get logs
@@ -126,8 +131,86 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             var activityDtos = JsonConvert.DeserializeObject<List<ActivityContextDto>>(response);
             var logInfos = GetAllLogInfos(activityDtos);
 
+            //todo: filter by request trace id
+
             logInfos = logInfos.Where(logInfo => logInfo.StateType != null
                                                 && logInfo.StateType.Equals(typeof(ViewEngineValues)));
+
+            // verify logs
+        }
+
+        [Fact]
+        public async Task RazorView_Found_NotCached()
+        {
+            // Arrange
+            var server = TestServer.Create(_services, _app);
+            var client = server.CreateClient();
+            var request1TraceId = Guid.NewGuid().ToString();
+
+            // Act and Assert
+            var response = await client.GetStringAsync("http://localhost/Home/Index?RequestTraceId=" + request1TraceId);
+            Assert.Equal("Home.Index", response);
+
+            // get logs
+            response = await client.GetStringAsync("http://localhost/logs");
+            var activityDtos = JsonConvert.DeserializeObject<List<ActivityContextDto>>(response);
+            var logInfos = GetAllLogInfos(activityDtos);
+
+            //todo: filter by reuqest trace id
+
+            logInfos = logInfos.Where(logInfo => logInfo.StateType != null
+                                                && logInfo.StateType.Equals(typeof(ViewEngineValues)));
+
+            // verify logs
+        }
+
+        [Fact]
+        public async Task RazorView_NotFound()
+        {
+            // Arrange
+            var server = TestServer.Create(_services, _app);
+            var client = server.CreateClient();
+            var request1TraceId = Guid.NewGuid().ToString();
+            
+            // Act and Assert
+            var response = await client.GetStringAsync("http://localhost/Home/Index?RequestTraceId=" + request1TraceId);
+            Assert.Equal("Home.Index", response);
+            
+            // get logs
+            response = await client.GetStringAsync("http://localhost/logs");
+            var activityDtos = JsonConvert.DeserializeObject<List<ActivityContextDto>>(response);
+            var logInfos = GetAllLogInfos(activityDtos);
+
+            //todo: filter by request trace id
+
+            logInfos = logInfos.Where(logInfo => logInfo.StateType != null
+                                                && logInfo.StateType.Equals(typeof(ViewEngineValues)));
+
+            // verify logs
+        }
+
+        [Fact]
+        public async Task RazorView_PartialView_Found()
+        {
+            // Arrange
+            var server = TestServer.Create(_services, _app);
+            var client = server.CreateClient();
+            var request1TraceId = Guid.NewGuid().ToString();
+
+            // Act and Assert
+            var response = await client.GetStringAsync("http://localhost/TODO?RequestTraceId=" + request1TraceId);
+        }
+
+        [Fact]
+        public async Task RazorView_PartialView_NotFound()
+        {
+            // Arrange
+            var server = TestServer.Create(_services, _app);
+            var client = server.CreateClient();
+            var request1TraceId = Guid.NewGuid().ToString();
+
+            // Act and Assert
+            var response = await client.GetStringAsync("http://localhost/TODO?RequestTraceId=" + request1TraceId);
         }
 
         private async Task<IEnumerable<LogInfoDto>> GetLogsForStartupAsync()
