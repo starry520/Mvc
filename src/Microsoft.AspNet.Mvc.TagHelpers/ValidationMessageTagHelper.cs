@@ -12,7 +12,6 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
     /// attribute.
     /// </summary>
     [HtmlElementName("span")]
-    [ContentBehavior(ContentBehavior.Modify)]
     public class ValidationMessageTagHelper : TagHelper
     {
         private const string ValidationForAttributeName = "asp-validation-for";
