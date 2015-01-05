@@ -17,7 +17,6 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
     /// <see cref="ContentBehavior.Modify"/> in order to read element's content but does not modify that content. The
     /// only modification it makes is to add a <c>selected</c> attribute in some cases.
     /// </remarks>
-    [ContentBehavior(ContentBehavior.Modify)]
     public class OptionTagHelper : TagHelper
     {
         // Protected to ensure subclasses are correctly activated. Internal for ease of use when testing.

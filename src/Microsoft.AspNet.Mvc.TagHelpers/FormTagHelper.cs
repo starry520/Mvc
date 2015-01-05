@@ -13,7 +13,6 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
     /// <summary>
     /// <see cref="ITagHelper"/> implementation targeting &lt;form&gt; elements.
     /// </summary>
-    [ContentBehavior(ContentBehavior.Append)]
     public class FormTagHelper : TagHelper
     {
         private const string ActionAttributeName = "asp-action";

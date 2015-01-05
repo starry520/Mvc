@@ -13,6 +13,7 @@ using Microsoft.AspNet.Mvc.Razor.OptionDescriptors;
 using Microsoft.AspNet.Mvc.Rendering;
 using Microsoft.AspNet.Mvc.Routing;
 using Microsoft.AspNet.Security;
+using Microsoft.Framework.Cache.Memory;
 using Microsoft.Framework.ConfigurationModel;
 using Microsoft.Framework.DependencyInjection;
 using Microsoft.Framework.DependencyInjection.NestedProviders;
@@ -106,6 +107,7 @@ namespace Microsoft.AspNet.Mvc
             // Caches view locations that are valid for the lifetime of the application.
             yield return describe.Singleton<IViewLocationCache, DefaultViewLocationCache>();
             yield return describe.Singleton<IRazorFileSystemCache, DefaultRazorFileSystemCache>();
+            yield return describe.Instance<IMemoryCache>(new MemoryCache(new MemoryCacheOptions { ListenForMemoryPressure = true }));
 
             // The host is designed to be discarded after consumption and is very inexpensive to initialize.
             yield return describe.Transient<IMvcRazorHost>(serviceProvider =>
