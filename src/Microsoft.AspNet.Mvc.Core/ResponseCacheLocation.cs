@@ -12,7 +12,7 @@ namespace Microsoft.AspNet.Mvc
         Any = 0,
         // Cached only in the client
         Client = 1,
-        // The "Location" part of "Cache-control" is not set
-        Default = 2
+        // "Cache-control" and "Pragma" are set to "no-cache"
+        None = 2
     }
 }

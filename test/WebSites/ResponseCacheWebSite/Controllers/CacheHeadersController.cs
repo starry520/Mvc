@@ -5,7 +5,7 @@ using Microsoft.AspNet.Mvc;
 
 namespace ResponseCacheWebSite
 {
-    public class HomeController : Controller
+    public class CacheHeadersController : Controller
     {
         [ResponseCache(Duration = 100, Location = ResponseCacheLocation.Any, VaryByHeader = "Accept")]
         public IActionResult Index()
@@ -28,6 +28,19 @@ namespace ResponseCacheWebSite
         [ResponseCache(NoStore = true)]
         public IActionResult NoStore()
         {
+            return Content("Hello World!");
+        }
+
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public IActionResult NoCacheAtAll()
+        {
+            return Content("Hello World!");
+        }
+
+        [ResponseCache(Duration = 40)]
+        public IActionResult SetHeadersInAction()
+        {
+            Response.Headers.Set("Cache-control", "max-age=10");
             return Content("Hello World!");
         }
     }
