@@ -1,3 +1,4 @@
+use namespace="System.Reflection"
 
 var VERSION='0.1'
 var FULL_VERSION='0.1'
@@ -8,3 +9,68 @@ k-standard-goals
 
 #xml-docs-test .clean .build-compile description='Check generated XML documentation files for errors' target='test'
   k-xml-docs-test
+
+#fxcop
+    @{
+        var packagesDir = E("KRE_PACKAGES");
+        if (string.IsNullOrEmpty(packagesDir))
+        {
+            packagesDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".kpm", "packages");
+        }
+
+        var argsBuilder = new StringBuilder();
+
+        foreach (var packageId in Directory.EnumerateDirectories(packagesDir))
+        {
+            var newestVersion = Directory.EnumerateDirectories(Path.Combine(packagesDir, packageId))
+                                         .OrderByDescending(d => d, StringComparer.OrdinalIgnoreCase)
+                                         .First();
+
+            var libDir = Path.Combine(packagesDir, packageId, newestVersion, "lib");
+
+            var aspnet50Dir = Path.Combine(libDir, "aspnet50");
+            var net45Dir = Path.Combine(libDir, "net45");
+            if (Directory.Exists(aspnet50Dir))
+            {
+                argsBuilder.AppendFormat("/d:\"{0}\" ", aspnet50Dir);
+            }
+            else if (Directory.Exists(net45Dir))
+            {
+                argsBuilder.AppendFormat("/d:\"{0}\" ", net45Dir);
+            }
+        }
+
+        var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(tempDir);
+
+        argsBuilder.AppendFormat("/d:\"{0}\" ", tempDir);
+
+        var srcBinaries = new List<string>();
+        var srcDir = Path.Combine(Directory.GetCurrentDirectory(), "src");
+        foreach (var project in Directory.EnumerateDirectories(srcDir))
+        {
+            var binaryDir = Path.Combine(srcDir, project, "bin", E("Configuration") ?? "debug", "aspnet50");
+            if (Directory.Exists(binaryDir))
+            {
+                argsBuilder.AppendFormat("/d:\"{0}\" ", binaryDir);
+                var binaryPath = Directory.EnumerateFiles(binaryDir, "*.dll").First();
+                srcBinaries.Add(binaryPath);
+
+                var assembly = Assembly.LoadFile(binaryPath);
+                foreach (var resource in assembly.GetManifestResourceNames().Where(r => r.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)))
+                {
+                    using (var target = File.Create(Path.Combine(tempDir, resource)))
+                    using (var source = assembly.GetManifestResourceStream(resource))
+                    {
+                        source.CopyTo(target);
+                    }
+                }
+            }
+        }
+
+        foreach (var binary in srcBinaries)
+        {
+            var commandLine = string.Format("/f:{0} {1} /console", binary, argsBuilder);
+            Exec(@"C:\Program Files (x86)\Microsoft FxCop 1.36\FxCopCmd.exe", commandLine);
+        }
+    }
