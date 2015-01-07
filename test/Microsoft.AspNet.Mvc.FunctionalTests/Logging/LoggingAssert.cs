@@ -22,14 +22,9 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             // these trees is provided.
             if (!AreScopesEqual(expected, actual))
             {
-                var expectedScopes = new List<string>();
-                var actualScopes = new List<string>();
-
-                TraverseScopeTree(expected, expectedScopes);
-                TraverseScopeTree(actual, actualScopes);
-
-                throw new EqualException(expected: string.Join(", ", expectedScopes),
-                                        actual: string.Join(", ", actualScopes));
+                throw new EqualException(
+                    expected: expected.FlattenScopeTree(),
+                    actual: actual.FlattenScopeTree());
             }
 
             return true;
@@ -71,26 +66,6 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             }
 
             return isChildScopeEqual;
-        }
-
-        /// <summary>
-        /// Traverses the scope node sub-tree and collects the list scopes
-        /// </summary>
-        /// <param name="root"></param>
-        /// <param name="scopes"></param>
-        private static void TraverseScopeTree(ScopeNodeDto root, List<string> scopes)
-        {
-            if (root == null)
-            {
-                return;
-            }
-
-            scopes.Add(root.State?.ToString());
-
-            foreach (var childScope in root.Children)
-            {
-                TraverseScopeTree(childScope, scopes);
-            }
         }
     }
 }
