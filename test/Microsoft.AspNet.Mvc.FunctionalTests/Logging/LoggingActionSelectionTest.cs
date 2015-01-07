@@ -129,9 +129,9 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             Assert.Equal(
                         typeof(LoggingWebSite.Controllers.HomeController),
                         (Type)selectedAction.ControllerTypeInfo);
-            Assert.Equal(0, selectedAction.Parameters.Count);
-            Assert.False(selectedAction.HttpMethods.HasValues);
-            Assert.Equal(0, selectedAction.FilterDescriptors.Count);
+            Assert.Equal(0, selectedAction.Parameters.Count); // JArray
+            Assert.False(selectedAction.HttpMethods.HasValues); // HttpMethods is a List<string> and here its JValue
+            Assert.Equal(0, selectedAction.FilterDescriptors.Count); // JArray
         }
 
         private async Task<IEnumerable<ActivityContextDto>> GetLogsAsync(HttpClient client,
