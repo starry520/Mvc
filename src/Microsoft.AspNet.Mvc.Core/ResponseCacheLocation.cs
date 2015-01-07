@@ -8,11 +8,17 @@ namespace Microsoft.AspNet.Mvc
     /// </summary>
     public enum ResponseCacheLocation
     {
-        // Cached in both proxies and client
+        /// <summary>
+        /// Cached in both proxies and client
+        /// </summary>
         Any = 0,
-        // Cached only in the client
+        /// <summary>
+        /// Cached only in the client
+        /// </summary>
         Client = 1,
-        // "Cache-control" and "Pragma" are set to "no-cache"
+        /// <summary>
+        /// "Cache-control" and "Pragma" are set to "no-cache"
+        /// </summary>
         None = 2
     }
 }

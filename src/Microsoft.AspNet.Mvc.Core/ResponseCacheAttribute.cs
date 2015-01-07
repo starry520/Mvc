@@ -7,14 +7,14 @@ using System.Globalization;
 namespace Microsoft.AspNet.Mvc
 {
     /// <summary>
-    /// An action filter which sets the appropriate headers related to Response caching.
+    /// An <see cref="ActionFilterAttribute"/> which sets the appropriate headers related to Response caching.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
     public class ResponseCacheAttribute : ActionFilterAttribute
     {
         // A nullable-int cannot be used as an Attribute parameter.
         // Hence this nullable-int is present to back the Duration property.
-        private int? _duration = null;
+        private int? _duration;
         
         /// <summary>
         /// Gets or sets the duration in seconds for which the response is cached.
@@ -42,7 +42,7 @@ namespace Microsoft.AspNet.Mvc
         public ResponseCacheLocation Location { get; set; }
 
         /// <summary>
-        /// Gets or sets the boolean which determines whether the data should be stored or not.
+        /// Gets or sets the value which determines whether the data should be stored or not.
         /// </summary>
         public bool NoStore { get; set; }
 
@@ -91,11 +91,11 @@ namespace Microsoft.AspNet.Mvc
                 if (_duration != null)
                 {
                     cacheControlValue = string.Format(
-                                                CultureInfo.InvariantCulture,
-                                                "{0}{1}max-age={2}",
-                                                cacheControlValue,
-                                                cacheControlValue != null? "," : null,
-                                                Duration.ToString());
+                        CultureInfo.InvariantCulture,
+                        "{0}{1}max-age={2}",
+                        cacheControlValue,
+                        cacheControlValue != null? "," : null,
+                        Duration.ToString());
                 }
 
                 headers.Set("Cache-control", cacheControlValue);
