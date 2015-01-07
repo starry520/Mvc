@@ -363,7 +363,7 @@ namespace Microsoft.AspNet.Mvc.Core.Test
             }
         }
 
-        private class MockCookieCollection : IFormCollection
+        private class MockCookieCollection : IReadableStringCollection
         {
             private Dictionary<string, string> _dictionary;
 
@@ -380,14 +380,6 @@ namespace Microsoft.AspNet.Mvc.Core.Test
                 get
                 {
                     return _dictionary.Keys;
-                }
-            }
-
-            public IFormFileCollection Files
-            {
-                get
-                {
-                    throw new NotImplementedException();
                 }
             }
 
