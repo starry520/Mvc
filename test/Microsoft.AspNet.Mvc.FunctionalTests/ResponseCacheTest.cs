@@ -99,5 +99,22 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             data = Assert.Single(response.Headers.GetValues("Vary"));
             Assert.Equal("Accept", data);
         }
+
+        [Fact]
+        public async Task HeadersToNotCacheAParticularAction()
+        {
+            // Arrange
+            var server = TestServer.Create(_provider, _app);
+            var client = server.CreateClient();
+
+            // Act
+            var response = await client.GetAsync("http://localhost/ClassLevelCache/DoNotCacheThisAction");
+
+            // Assert
+            var data = Assert.Single(response.Headers.GetValues("Cache-control"));
+            Assert.Equal("no-store, no-cache", data);
+            data = Assert.Single(response.Headers.GetValues("Vary"));
+            Assert.Equal("Accept", data);
+        }
     }
 }
