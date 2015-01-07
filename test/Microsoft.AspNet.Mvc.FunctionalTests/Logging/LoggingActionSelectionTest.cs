@@ -13,6 +13,7 @@ using Microsoft.AspNet.Builder;
 using Microsoft.AspNet.Mvc.Logging;
 using Microsoft.AspNet.TestHost;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Microsoft.AspNet.Mvc.FunctionalTests
@@ -118,16 +119,21 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             Assert.NotNull(logInfo.State);
 
             dynamic actionSelectionResult = logInfo.State;
-            Assert.NotNull(actionSelectionResult.SelectedAction);
-            Assert.Equal("Default", actionSelectionResult.SelectedAction.Name.ToString());
-            Assert.Equal("Index", actionSelectionResult.SelectedAction.DisplayName.ToString());
+            Assert.NotNull(actionSelectionResult);
+
+            dynamic selectedAction = actionSelectionResult.SelectedAction;
+            Assert.Equal(
+                        typeof(LoggingWebSite.Controllers.HomeController).FullName + ".Default",
+                        selectedAction.DisplayName.ToString());
+            Assert.Equal("Index", selectedAction.Name.ToString());
             Assert.Equal(
                         typeof(LoggingWebSite.Controllers.HomeController),
-                        (Type)actionSelectionResult.SelectedAction.ControllerTypeInfo);
-
-            
+                        (Type)selectedAction.ControllerTypeInfo);
+            Assert.Equal(0, selectedAction.Parameters.Count);
+            Assert.False(selectedAction.HttpMethods.HasValues);
+            Assert.Equal(0, selectedAction.FilterDescriptors.Count);
         }
-        
+
         private async Task<IEnumerable<ActivityContextDto>> GetLogsAsync(HttpClient client,
                                                                     string requestTraceId)
         {
