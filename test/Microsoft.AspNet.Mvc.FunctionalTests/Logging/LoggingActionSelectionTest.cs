@@ -21,9 +21,9 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
     {
         private readonly IServiceProvider _services = TestHelper.CreateServices(nameof(LoggingWebSite));
         private readonly Action<IApplicationBuilder> _app = new LoggingWebSite.Startup().Configure;
-        
+
         [Fact]
-        public async Task Successful_ActionSelection_Logged()
+        public async Task Successful_MvcRouteMatching_Logged()
         {
             // Arrange
             var server = TestServer.Create(_services, _app);
@@ -33,7 +33,7 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             // Act
             var response = await client.GetAsync(string.Format(
                                                         "http://localhost/home/index?{0}={1}",
-                                                        LoggingExtensions.RequestTraceIdQueryKey, 
+                                                        LoggingExtensions.RequestTraceIdQueryKey,
                                                         requestTraceId));
 
             // Assert
@@ -47,7 +47,7 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             Assert.NotNull(scopeNode);
             var logInfo = scopeNode.Messages.OfDataType<MvcRouteHandlerRouteAsyncValues>()
                                             .FirstOrDefault();
-                        
+
             Assert.NotNull(logInfo);
             Assert.NotNull(logInfo.State);
 
@@ -58,7 +58,7 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
         }
 
         [Fact]
-        public async Task Failed_ActionSelection_Logged()
+        public async Task Failed_MvcRouteMatching_Logged()
         {
             // Arrange
             var server = TestServer.Create(_services, _app);
@@ -68,7 +68,7 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             // Act
             var response = await client.GetAsync(string.Format(
                                                         "http://localhost/InvalidController/InvalidAction?{0}={1}",
-                                                        LoggingExtensions.RequestTraceIdQueryKey, 
+                                                        LoggingExtensions.RequestTraceIdQueryKey,
                                                         requestTraceId));
 
             // Assert
@@ -88,6 +88,46 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             Assert.False((bool)actionSelection.Handled);
         }
 
+        [Fact]
+        public async Task ActionSelectionInformation_Logged()
+        {
+            // Arrange
+            var server = TestServer.Create(_services, _app);
+            var client = server.CreateClient();
+            var requestTraceId = Guid.NewGuid().ToString();
+
+            // Act
+            var response = await client.GetAsync(string.Format(
+                                                        "http://localhost/home/index?{0}={1}",
+                                                        LoggingExtensions.RequestTraceIdQueryKey,
+                                                        requestTraceId));
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var responseData = await response.Content.ReadAsStringAsync();
+            Assert.Equal("Home.Index", responseData);
+
+            var logs = await GetLogsAsync(client, requestTraceId);
+            var scopeNode = logs.FindScope(nameof(DefaultActionSelector) + ".SelectAsync");
+
+            Assert.NotNull(scopeNode);
+            var logInfo = scopeNode.Messages.OfDataType<DefaultActionSelectorSelectAsyncValues>()
+                                            .FirstOrDefault();
+
+            Assert.NotNull(logInfo);
+            Assert.NotNull(logInfo.State);
+
+            dynamic actionSelectionResult = logInfo.State;
+            Assert.NotNull(actionSelectionResult.SelectedAction);
+            Assert.Equal("Default", actionSelectionResult.SelectedAction.Name.ToString());
+            Assert.Equal("Index", actionSelectionResult.SelectedAction.DisplayName.ToString());
+            Assert.Equal(
+                        typeof(LoggingWebSite.Controllers.HomeController),
+                        (Type)actionSelectionResult.SelectedAction.ControllerTypeInfo);
+
+            
+        }
+        
         private async Task<IEnumerable<ActivityContextDto>> GetLogsAsync(HttpClient client,
                                                                     string requestTraceId)
         {

@@ -107,7 +107,7 @@ namespace Microsoft.AspNet.Mvc.Logging
         /// The type info of the action's controller if this is a <see cref="ControllerActionDescriptor"/>.
         /// See <see cref="ControllerActionDescriptor.ControllerTypeInfo"/>.
         /// </summary>
-        public TypeInfo ControllerTypeInfo { get; }
+        public Type ControllerTypeInfo { get; }
 
         public override string Format()
         {
