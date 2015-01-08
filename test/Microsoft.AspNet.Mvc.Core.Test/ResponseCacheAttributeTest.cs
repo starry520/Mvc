@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Open Technologies, Inc. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using System.Collections.Generic;
 using Microsoft.AspNet.PipelineCore;
 using Microsoft.AspNet.Routing;
@@ -10,36 +11,52 @@ namespace Microsoft.AspNet.Mvc
 {
     public class ResponseCacheAttributeTest
     {
+        [Fact]
+        public void OnActionExecuting_ThrowsIfDurationIsNotSet()
+        {
+            // Arrange
+            var context = GetActionExecutingContext();
+            var cache = new ResponseCacheAttribute() { NoStore = true };
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(
+                () => { cache.OnActionExecuting(context); });
+        }
+
         public static IEnumerable<object[]> CacheControlData
         {
             get
             {
-                yield return new object[] { new ResponseCacheAttribute { NoStore = true }, "no-store" };
-                // If no-store is set, then location cannot be set.
+                yield return new object[] { new ResponseCacheAttribute { NoStore = true, Duration = 0 }, "no-store" };
+                // If no-store is set, then location is ignored.
                 yield return new object[] {
-                    new ResponseCacheAttribute { NoStore = true, Location = ResponseCacheLocation.Client },
+                    new ResponseCacheAttribute
+                        { NoStore = true, Duration = 0, Location = ResponseCacheLocation.Client },
                     "no-store"
                 };
                 yield return new object[] {
-                    new ResponseCacheAttribute { NoStore = true, Location = ResponseCacheLocation.Any },
+                    new ResponseCacheAttribute { NoStore = true, Duration = 0, Location = ResponseCacheLocation.Any },
                     "no-store"
                 };
-                // If no-store is set, then duration cannot be set.
+                // If no-store is set, then duration is ignored.
                 yield return new object[] {
                     new ResponseCacheAttribute { NoStore = true, Duration = 100 }, "no-store"
                 };
 
                 yield return new object[] {
-                    new ResponseCacheAttribute { Location = ResponseCacheLocation.Client }, "private"
+                    new ResponseCacheAttribute { Location = ResponseCacheLocation.Client, Duration = 10 },
+                    "private,max-age=10"
                 };
                 yield return new object[] {
-                    new ResponseCacheAttribute { Location = ResponseCacheLocation.Any }, "public"
+                    new ResponseCacheAttribute { Location = ResponseCacheLocation.Any, Duration = 10 },
+                    "public,max-age=10"
                 };
                 yield return new object[] {
-                    new ResponseCacheAttribute { Location = ResponseCacheLocation.None }, "no-cache"
+                    new ResponseCacheAttribute { Location = ResponseCacheLocation.None, Duration = 10 },
+                    "no-cache,max-age=10"
                 };
                 yield return new object[] {
-                    new ResponseCacheAttribute { Location = ResponseCacheLocation.Client, Duration=10 },
+                    new ResponseCacheAttribute { Location = ResponseCacheLocation.Client, Duration = 10 },
                     "private,max-age=10"
                 };
                 yield return new object[] {
@@ -71,16 +88,17 @@ namespace Microsoft.AspNet.Mvc
         {
             get
             {
-                // If no-store is set, then location cannot be set.
+                // If no-store is set, then location is ignored.
                 yield return new object[] {
-                    new ResponseCacheAttribute { NoStore = true, Location = ResponseCacheLocation.Client },
+                    new ResponseCacheAttribute
+                    { NoStore = true, Location = ResponseCacheLocation.Client, Duration = 0 },
                     "no-store"
                 };
                 yield return new object[] {
-                    new ResponseCacheAttribute { NoStore = true, Location = ResponseCacheLocation.Any },
+                    new ResponseCacheAttribute { NoStore = true, Location = ResponseCacheLocation.Any, Duration = 0 },
                     "no-store"
                 };
-                // If no-store is set, then duration cannot be set.
+                // If no-store is set, then duration is ignored.
                 yield return new object[] {
                     new ResponseCacheAttribute { NoStore = true, Duration = 100 }, "no-store"
                 };
@@ -89,7 +107,8 @@ namespace Microsoft.AspNet.Mvc
 
         [Theory]
         [MemberData(nameof(NoStoreData))]
-        public void OnActionExecuting_DoesNotSetLocationOrDuration_IfNoStoreIsSet(ResponseCacheAttribute cache, string output)
+        public void OnActionExecuting_DoesNotSetLocationOrDuration_IfNoStoreIsSet(
+            ResponseCacheAttribute cache, string output)
         {
             // Arrange
             var context = GetActionExecutingContext();
@@ -105,25 +124,32 @@ namespace Microsoft.AspNet.Mvc
         {
             get
             {
-                yield return new object[] { new ResponseCacheAttribute { VaryByHeader = "Accept" }, "Accept", "public" };
                 yield return new object[] {
-                    new ResponseCacheAttribute { VaryByHeader = "Accept", NoStore = true },
+                    new ResponseCacheAttribute { VaryByHeader = "Accept", Duration = 10 },
+                    "Accept",
+                    "public,max-age=10" };
+                yield return new object[] {
+                    new ResponseCacheAttribute { VaryByHeader = "Accept", NoStore = true, Duration = 0 },
                     "Accept",
                     "no-store"
                 };
                 yield return new object[] {
-                    new ResponseCacheAttribute { Location = ResponseCacheLocation.Client, VaryByHeader = "Accept" },
+                    new ResponseCacheAttribute {
+                        Location = ResponseCacheLocation.Client, Duration = 10, VaryByHeader = "Accept"
+                    },
                     "Accept",
-                    "private"
-                };
-                yield return new object[] {
-                    new ResponseCacheAttribute { Location = ResponseCacheLocation.Any, VaryByHeader = "Test" },
-                    "Test",
-                    "public"
+                    "private,max-age=10"
                 };
                 yield return new object[] {
                     new ResponseCacheAttribute {
-                        Location = ResponseCacheLocation.Client, Duration=10, VaryByHeader = "Test"
+                        Location = ResponseCacheLocation.Any, Duration = 10, VaryByHeader = "Test"
+                    },
+                    "Test",
+                    "public,max-age=10"
+                };
+                yield return new object[] {
+                    new ResponseCacheAttribute {
+                        Location = ResponseCacheLocation.Client, Duration = 10, VaryByHeader = "Test"
                     },
                     "Test",
                     "private,max-age=10"
@@ -163,7 +189,8 @@ namespace Microsoft.AspNet.Mvc
             var cache = new ResponseCacheAttribute()
                             {
                                 NoStore = true,
-                                Location = ResponseCacheLocation.None
+                                Location = ResponseCacheLocation.None,
+                                Duration = 0
                             };
 
             // Act

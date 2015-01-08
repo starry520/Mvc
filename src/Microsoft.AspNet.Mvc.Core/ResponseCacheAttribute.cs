@@ -3,6 +3,7 @@
 
 using System;
 using System.Globalization;
+using Microsoft.AspNet.Mvc.Core;
 
 namespace Microsoft.AspNet.Mvc
 {
@@ -18,17 +19,14 @@ namespace Microsoft.AspNet.Mvc
         
         /// <summary>
         /// Gets or sets the duration in seconds for which the response is cached.
+        /// This is a required parameter.
+        /// This sets "max-age" in "Cache-control" header.
         /// </summary>
         public int Duration
         { 
             get
             {
-                if (_duration == null)
-                {
-                    return 0;
-                }
-
-                return (int)_duration;
+                return _duration ?? 0;
             }
             set
             {
@@ -43,6 +41,9 @@ namespace Microsoft.AspNet.Mvc
 
         /// <summary>
         /// Gets or sets the value which determines whether the data should be stored or not.
+        /// When set to true, it sets "Cache-control" header to "no-store".
+        /// Ignores the "Location" parameter for values other than "None".
+        /// Ignores the "duration" parameter.
         /// </summary>
         public bool NoStore { get; set; }
 
@@ -56,6 +57,17 @@ namespace Microsoft.AspNet.Mvc
         {
             var headers = context.HttpContext.Response.Headers;
 
+            // Clear all headers
+            headers.Remove("Vary");
+            headers.Remove("Cache-control");
+            headers.Remove("Pragma");
+
+            if (_duration == null)
+            {
+                throw new InvalidOperationException(Resources.ResponseCache_SpecifyDuration);
+            }
+
+            // Set appropriate headers
             if (!string.IsNullOrEmpty(VaryByHeader))
             {
                 headers.Set("Vary", VaryByHeader);
@@ -88,17 +100,17 @@ namespace Microsoft.AspNet.Mvc
                         break;
                 }
 
-                if (_duration != null)
-                {
-                    cacheControlValue = string.Format(
-                        CultureInfo.InvariantCulture,
-                        "{0}{1}max-age={2}",
-                        cacheControlValue,
-                        cacheControlValue != null? "," : null,
-                        Duration.ToString());
-                }
+                cacheControlValue = string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0}{1}max-age={2}",
+                    cacheControlValue,
+                    cacheControlValue != null? "," : null,
+                    Duration);
 
-                headers.Set("Cache-control", cacheControlValue);
+                if (cacheControlValue != null)
+                {
+                    headers.Set("Cache-control", cacheControlValue);
+                }
             }
         }
     }

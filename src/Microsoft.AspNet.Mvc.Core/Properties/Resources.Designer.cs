@@ -1530,6 +1530,22 @@ namespace Microsoft.AspNet.Mvc.Core
             return GetString("SerializableError_DefaultError");
         }
 
+        /// <summary>
+        /// Duration parameter must be specified.
+        /// </summary>
+        internal static string ResponseCache_SpecifyDuration
+        {
+            get { return GetString("ResponseCache_SpecifyDuration"); }
+        }
+
+        /// <summary>
+        /// Duration parameter must be specified.
+        /// </summary>
+        internal static string FormatResponseCache_SpecifyDuration()
+        {
+            return GetString("ResponseCache_SpecifyDuration");
+        }
+
         private static string GetString(string name, params string[] formatterNames)
         {
             var value = _resourceManager.GetString(name);

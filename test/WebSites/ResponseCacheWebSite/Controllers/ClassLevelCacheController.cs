@@ -24,7 +24,7 @@ namespace ResponseCacheWebSite
             return "Conflict";
         }
 
-        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        [ResponseCache(NoStore = true, Duration = 0, Location = ResponseCacheLocation.None)]
         public string DoNotCacheThisAction()
         {
             return "Conflict";

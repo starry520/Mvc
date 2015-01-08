@@ -9,15 +9,17 @@ namespace Microsoft.AspNet.Mvc
     public enum ResponseCacheLocation
     {
         /// <summary>
-        /// Cached in both proxies and client
+        /// Cached in both proxies and client.
+        /// Sets "Cache-control" header to "public".
         /// </summary>
         Any = 0,
         /// <summary>
-        /// Cached only in the client
+        /// Cached only in the client.
+        /// Sets "Cache-control" header to "private".
         /// </summary>
         Client = 1,
         /// <summary>
-        /// "Cache-control" and "Pragma" are set to "no-cache"
+        /// "Cache-control" and "Pragma" headers are set to "no-cache".
         /// </summary>
         None = 2
     }

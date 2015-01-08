@@ -412,4 +412,7 @@
   <data name="SerializableError_DefaultError" xml:space="preserve">
     <value>The input was not valid.</value>
   </data>
+  <data name="ResponseCache_SpecifyDuration" xml:space="preserve">
+    <value>Duration parameter must be specified.</value>
+  </data>
 </root>

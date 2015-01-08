@@ -96,8 +96,6 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             // Assert
             var data = Assert.Single(response.Headers.GetValues("Cache-control"));
             Assert.Equal("public, max-age=20", data);
-            data = Assert.Single(response.Headers.GetValues("Vary"));
-            Assert.Equal("Accept", data);
         }
 
         [Fact]
@@ -113,8 +111,51 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             // Assert
             var data = Assert.Single(response.Headers.GetValues("Cache-control"));
             Assert.Equal("no-store, no-cache", data);
-            data = Assert.Single(response.Headers.GetValues("Vary"));
+        }
+
+        [Fact]
+        public async Task ClassLevelHeadersAreUnsetByActionLevelHeaders()
+        {
+            // Arrange
+            var server = TestServer.Create(_provider, _app);
+            var client = server.CreateClient();
+
+            // Act
+            var response = await client.GetAsync("http://localhost/ClassLevelNoStore/CacheThisAction");
+
+            // Assert
+            var data = Assert.Single(response.Headers.GetValues("Vary"));
             Assert.Equal("Accept", data);
+            data = Assert.Single(response.Headers.GetValues("Cache-control"));
+            Assert.Equal("public, max-age=10", data);
+            Assert.Throws<InvalidOperationException>(() => response.Headers.GetValues("Pragma"));
+        }
+
+        [Fact]
+        public async Task SetsCacheControlPublicByDefault()
+        {
+            // Arrange
+            var server = TestServer.Create(_provider, _app);
+            var client = server.CreateClient();
+
+            // Act
+            var response = await client.GetAsync("http://localhost/CacheHeaders/SetsCacheControlPublicByDefault");
+
+            // Assert
+            var data = Assert.Single(response.Headers.GetValues("Cache-control"));
+            Assert.Equal("public, max-age=40", data);
+        }
+
+        [Fact]
+        public async Task ThrowsWhenDurationIsNotSet()
+        {
+            // Arrange
+            var server = TestServer.Create(_provider, _app);
+            var client = server.CreateClient();
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                    () => client.GetAsync("http://localhost/CacheHeaders/ThrowsWhenDurationIsNotSet"));
         }
     }
 }

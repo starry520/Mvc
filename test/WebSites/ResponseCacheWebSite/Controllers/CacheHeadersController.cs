@@ -25,13 +25,13 @@ namespace ResponseCacheWebSite
             return Content("Hello World!");
         }
 
-        [ResponseCache(NoStore = true)]
+        [ResponseCache(NoStore = true, Duration = 0)]
         public IActionResult NoStore()
         {
             return Content("Hello World!");
         }
 
-        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        [ResponseCache(NoStore = true, Duration = 0, Location = ResponseCacheLocation.None)]
         public IActionResult NoCacheAtAll()
         {
             return Content("Hello World!");
@@ -41,6 +41,18 @@ namespace ResponseCacheWebSite
         public IActionResult SetHeadersInAction()
         {
             Response.Headers.Set("Cache-control", "max-age=10");
+            return Content("Hello World!");
+        }
+
+        [ResponseCache(Duration = 40)]
+        public IActionResult SetsCacheControlPublicByDefault()
+        {
+            return Content("Hello World!");
+        }
+
+        [ResponseCache(VaryByHeader = "Accept")]
+        public IActionResult ThrowsWhenDurationIsNotSet()
+        {
             return Content("Hello World!");
         }
     }
