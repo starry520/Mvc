@@ -35,7 +35,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             IModelMetadataProvider metadataProvider,
             IUrlHelper urlHelper,
             IDictionary<string, object> validationAttributes)
-            : base(Mock.Of<IActionBindingContextProvider>(), GetAntiForgery(), metadataProvider, urlHelper)
+            : base(GetAntiForgery(), metadataProvider, urlHelper)
         {
             _validationAttributes = validationAttributes;
         }

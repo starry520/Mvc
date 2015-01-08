@@ -159,7 +159,6 @@ namespace Microsoft.AspNet.Mvc
             var context = new ResourceExecutingContext(ActionContext, _filters);
 
             context.InputFormatters = new List<IInputFormatter>(_inputFormatterProvider.InputFormatters);
-            context.InputFormatterSelector = _inputFormatterSelector;
             context.ModelBinders = new List<IModelBinder>(_modelBinderProvider.ModelBinders);
 
             context.ValidatorProviders = new List<IModelValidatorProvider>(
@@ -373,7 +372,7 @@ namespace Microsoft.AspNet.Mvc
             var bindingContext = new ActionBindingContext()
             {
                 InputFormatters = _resourceExecutingContext.InputFormatters,
-                InputFormatterSelector = _resourceExecutingContext.InputFormatterSelector,
+                InputFormatterSelector = _inputFormatterSelector,
                 MetadataProvider = _modelMetadataProvider,
                 ModelBinder = new CompositeModelBinder(_resourceExecutingContext.ModelBinders),
                 ValidatorProvider = new CompositeModelValidatorProvider(_resourceExecutingContext.ValidatorProviders),
