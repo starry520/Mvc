@@ -58,6 +58,9 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             return prefixContainer.GetKeysFromPrefix(prefix);
         }
 
+        /// <summary>
+        /// Returns a <see cref="ValueProviderResult"/> that contains the query value(s) for the given key.
+        /// </summary>
         public override async Task<ValueProviderResult> GetValueAsync([NotNull] string key)
         {
             var collection = await GetValueCollectionAsync();

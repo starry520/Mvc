@@ -11,6 +11,9 @@ using Microsoft.AspNet.Mvc.ModelBinding.Internal;
 
 namespace Microsoft.AspNet.Mvc.ModelBinding
 {
+    /// <summary>
+    /// Represents a value provider that contains the parsed form values.
+    /// </summary>
     public class FormCollectionValueProvider :
         MetadataAwareValueProvider<IFormDataValueProviderMetadata>,
         IEnumerableValueProvider
@@ -21,7 +24,8 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
         private IFormCollection _values;
 
         /// <summary>
-        /// Creates a NameValuePairsProvider wrapping an existing set of key value pairs.
+        /// Creates a <see cref="FormCollectionValueProvider"/> wrapping
+        /// an existing set of <see cref="IFormCollection"/>.
         /// </summary>
         /// <param name="values">The key value pairs to wrap.</param>
         /// <param name="culture">The culture to return with ValueProviderResult instances.</param>
@@ -58,6 +62,9 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             return prefixContainer.GetKeysFromPrefix(prefix);
         }
 
+        /// <summary>
+        /// Returns a <see cref="ValueProviderResult"/> that contains the form value(s) for the given key.
+        /// </summary>
         public override async Task<ValueProviderResult> GetValueAsync([NotNull] string key)
         {
             var collection = await GetValueCollectionAsync();
