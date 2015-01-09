@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Http;
 using Microsoft.AspNet.Mvc;
+using Microsoft.AspNet.Mvc.ModelBinding.Internal;
 
 namespace Microsoft.AspNet.Mvc.ModelBinding
 {
@@ -32,7 +33,7 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 {
                     return false;
                 }
-                bindingContext.Model = ConvertValuesToCollectionType(bindingContext.ModelType, postedFiles);
+                bindingContext.Model = ModelBindingHelper.ConvertValuesToCollectionType(bindingContext.ModelType, postedFiles);
                 return true;
             }
             return false;
@@ -64,26 +65,6 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
                 }
             }
             return postedFiles;
-        }
-
-        private object ConvertValuesToCollectionType(Type modelType, IList<IFormFile> values)
-        {
-            if (typeof(List<IFormFile>).IsAssignableFrom(modelType))
-            {
-                return new List<IFormFile>(values);
-            }
-            else if (typeof(IFormFile[]).IsAssignableFrom(modelType))
-            {
-                return values.ToArray();
-            }
-            else if (typeof(IEnumerable<IFormFile>).IsAssignableFrom(modelType))
-            {
-                return values;
-            }
-            else
-            {
-                return null;
-            }
         }
     }
 }

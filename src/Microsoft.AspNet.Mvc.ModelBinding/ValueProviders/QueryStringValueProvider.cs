@@ -31,6 +31,11 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             _culture = culture;
         }
 
+        /// <summary>
+        /// Creates a NameValuePairsProvider wrapping an existing set of key value pairs provided by the delegate.
+        /// </summary>
+        /// <param name="values">The delegate that provides the key value pairs to wrap.</param>
+        /// <param name="culture">The culture to return with ValueProviderResult instances.</param>
         public QueryStringValueProvider([NotNull] Func<Task<IReadableStringCollection>> valuesFactory,
                                                      CultureInfo culture)
         {
@@ -46,21 +51,21 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             }
         }
 
+        /// <inheritdoc />
         public override async Task<bool> ContainsPrefixAsync(string prefix)
         {
             var prefixContainer = await GetPrefixContainerAsync();
             return prefixContainer.ContainsPrefix(prefix);
         }
 
+        /// <inheritdoc />
         public virtual async Task<IDictionary<string, string>> GetKeysFromPrefixAsync([NotNull] string prefix)
         {
             var prefixContainer = await GetPrefixContainerAsync();
             return prefixContainer.GetKeysFromPrefix(prefix);
         }
 
-        /// <summary>
-        /// Returns a <see cref="ValueProviderResult"/> that contains the query value(s) for the given key.
-        /// </summary>
+        /// <inheritdoc />
         public override async Task<ValueProviderResult> GetValueAsync([NotNull] string key)
         {
             var collection = await GetValueCollectionAsync();

@@ -35,6 +35,12 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             _culture = culture;
         }
 
+        /// <summary>
+        /// Creates a <see cref="FormCollectionValueProvider"/> wrapping
+        /// an existing set of <see cref="IFormCollection"/> provided by a delegate.
+        /// </summary>
+        /// <param name="valuesFactory">The delegate that provides the key value pairs to wrap.</param>
+        /// <param name="culture">The culture to return with ValueProviderResult instances.</param>
         public FormCollectionValueProvider([NotNull] Func<Task<IFormCollection>> valuesFactory,
                                                      CultureInfo culture)
         {
@@ -50,21 +56,21 @@ namespace Microsoft.AspNet.Mvc.ModelBinding
             }
         }
 
+        /// <inheritdoc />
         public override async Task<bool> ContainsPrefixAsync(string prefix)
         {
             var prefixContainer = await GetPrefixContainerAsync();
             return prefixContainer.ContainsPrefix(prefix);
         }
 
+        /// <inheritdoc />
         public virtual async Task<IDictionary<string, string>> GetKeysFromPrefixAsync([NotNull] string prefix)
         {
             var prefixContainer = await GetPrefixContainerAsync();
             return prefixContainer.GetKeysFromPrefix(prefix);
         }
 
-        /// <summary>
-        /// Returns a <see cref="ValueProviderResult"/> that contains the form value(s) for the given key.
-        /// </summary>
+        /// <inheritdoc />
         public override async Task<ValueProviderResult> GetValueAsync([NotNull] string key)
         {
             var collection = await GetValueCollectionAsync();

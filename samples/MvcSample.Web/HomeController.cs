@@ -93,7 +93,7 @@ namespace MvcSample.Web
         /// <summary>
         /// Action that shows multiple file upload.
         /// </summary>
-        public async Task<ActionResult> PostFile(IEnumerable<IFormFile> file)
+        public async Task<ActionResult> PostFile(IList<IFormFile> file)
         {
             if (!ModelState.IsValid)
             {
@@ -102,7 +102,7 @@ namespace MvcSample.Web
 
             foreach (var f in file)
             {
-                await f.SaveAsAsync("C:\\Temp\\test-" + f.ParseContentDisposition().Value);
+                await f.SaveAsAsync("C:\\Temp\\test-file" + file.IndexOf(f));
             }
             return View();
         }

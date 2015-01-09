@@ -236,7 +236,6 @@ namespace Microsoft.AspNet.Mvc.Core.Test
             formCollection.Setup(f => f["form-field-name"]).Returns("valid-value");
             requestContext.Setup(o => o.ReadFormAsync(CancellationToken.None))
                           .Returns(Task.FromResult(formCollection.Object));
-
             mockHttpContext.Setup(o => o.Request)
                            .Returns(requestContext.Object);
 
