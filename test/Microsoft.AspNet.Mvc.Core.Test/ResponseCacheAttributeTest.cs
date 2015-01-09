@@ -201,11 +201,26 @@ namespace Microsoft.AspNet.Mvc
             Assert.Equal("no-cache", context.HttpContext.Response.Headers.Get("Pragma"));
         }
 
-        private ActionExecutingContext GetActionExecutingContext()
+        [Fact]
+        public void ContainsInnerFilterReturnsTrueWhenInnerFiltersArePresent()
+        {
+            // Arrange
+            var caches = new List<IFilter>();
+            caches.Add(new ResponseCacheAttribute() { Order = 1 });
+            caches.Add(new ResponseCacheAttribute() { Order = 5 });
+
+            var context = GetActionExecutingContext(caches);
+
+            // Act & Assert
+            Assert.False((caches[0] as ResponseCacheAttribute).ContainsInnerFilter(context));
+            Assert.True((caches[1] as ResponseCacheAttribute).ContainsInnerFilter(context));
+        }
+
+        private ActionExecutingContext GetActionExecutingContext(List<IFilter> filters = null)
         {
             return new ActionExecutingContext(
                 new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor()),
-                new IFilter[0],
+                filters == null ? new List<IFilter>() : filters,
                 new Dictionary<string, object>());
         }
     }

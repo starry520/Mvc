@@ -3,6 +3,7 @@
 
 using System;
 using System.Globalization;
+using System.Linq;
 using Microsoft.AspNet.Mvc.Core;
 
 namespace Microsoft.AspNet.Mvc
@@ -55,6 +56,13 @@ namespace Microsoft.AspNet.Mvc
         // <inheritdoc />
         public override void OnActionExecuting([NotNull] ActionExecutingContext context)
         {
+            // If there are more filters which can override the values written by this filter,
+            // then skip execution of this filter.
+            if (ContainsInnerFilter(context))
+            {
+                return;
+            }
+
             var headers = context.HttpContext.Response.Headers;
 
             // Clear all headers
@@ -62,12 +70,12 @@ namespace Microsoft.AspNet.Mvc
             headers.Remove("Cache-control");
             headers.Remove("Pragma");
 
+            // Set appropriate headers
             if (_duration == null)
             {
                 throw new InvalidOperationException(Resources.ResponseCache_SpecifyDuration);
             }
 
-            // Set appropriate headers
             if (!string.IsNullOrEmpty(VaryByHeader))
             {
                 headers.Set("Vary", VaryByHeader);
@@ -112,6 +120,13 @@ namespace Microsoft.AspNet.Mvc
                     headers.Set("Cache-control", cacheControlValue);
                 }
             }
+        }
+
+        // internal for Unit Testing purposes.
+        internal bool ContainsInnerFilter([NotNull] ActionExecutingContext context)
+        {
+            // Return true if there are any inner filters of type ResponseCacheAttribute.
+            return context.Filters.OfType<ResponseCacheAttribute>().Any(item => item.Order < Order);
         }
     }
 }
