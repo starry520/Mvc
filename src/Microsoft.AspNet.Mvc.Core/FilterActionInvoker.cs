@@ -22,6 +22,7 @@ namespace Microsoft.AspNet.Mvc
         private readonly IModelBinderProvider _modelBinderProvider;
         private readonly IModelValidatorProviderProvider _modelValidatorProviderProvider;
         private readonly IValueProviderFactoryProvider _valueProviderFactoryProvider;
+        private readonly IContextAccessor<ActionBindingContext> _actionBindingContextAccessor;
 
         private IFilter[] _filters;
         private FilterCursor _cursor;
@@ -47,9 +48,11 @@ namespace Microsoft.AspNet.Mvc
             [NotNull] IInputFormatterSelector inputFormatterSelector,
             [NotNull] IModelBinderProvider modelBinderProvider,
             [NotNull] IModelValidatorProviderProvider modelValidatorProviderProvider,
-            [NotNull] IValueProviderFactoryProvider valueProviderFactoryProvider)
+            [NotNull] IValueProviderFactoryProvider valueProviderFactoryProvider,
+            [NotNull] IContextAccessor<ActionBindingContext> actionBindingContextAccessor)
         {
             ActionContext = actionContext;
+
             _filterProvider = filterProvider;
             _modelMetadataProvider = modelMetadataProvider;
             _inputFormatterProvider = inputFormatterProvider;
@@ -57,13 +60,30 @@ namespace Microsoft.AspNet.Mvc
             _modelBinderProvider = modelBinderProvider;
             _modelValidatorProviderProvider = modelValidatorProviderProvider;
             _valueProviderFactoryProvider = valueProviderFactoryProvider;
+            _actionBindingContextAccessor = actionBindingContextAccessor;
+
+            ActionBindingContext = new ActionBindingContext();
         }
 
         protected ActionContext ActionContext { get; private set; }
 
+        protected ActionBindingContext ActionBindingContext
+        {
+            get
+            {
+                return _actionBindingContextAccessor.Value;
+            }
+            private set
+            {
+                _actionBindingContextAccessor.SetValue(value);
+            }
+        }
+
         protected abstract Task<IActionResult> InvokeActionAsync(ActionExecutingContext actionExecutingContext);
 
-        protected abstract Task<IDictionary<string, object>> GetActionArgumentsAsync([NotNull] ActionContext context);
+        protected abstract Task<IDictionary<string, object>> GetActionArgumentsAsync(
+            [NotNull] ActionContext context,
+            [NotNull] ActionBindingContext bindingContext);
 
         public virtual async Task InvokeAsync()
         {
@@ -369,25 +389,22 @@ namespace Microsoft.AspNet.Mvc
             _cursor.SetStage(FilterStage.ActionFilters);
 
             Debug.Assert(_resourceExecutingContext != null);
-            var bindingContext = new ActionBindingContext()
-            {
-                InputFormatters = _resourceExecutingContext.InputFormatters,
-                InputFormatterSelector = _inputFormatterSelector,
-                MetadataProvider = _modelMetadataProvider,
-                ModelBinder = new CompositeModelBinder(_resourceExecutingContext.ModelBinders),
-                ValidatorProvider = new CompositeModelValidatorProvider(_resourceExecutingContext.ValidatorProviders),
-            };
+
+            Debug.Assert(ActionBindingContext != null);
+            ActionBindingContext.InputFormatters = _resourceExecutingContext.InputFormatters;
+            ActionBindingContext.ModelBinder = new CompositeModelBinder(_resourceExecutingContext.ModelBinders);
+            ActionBindingContext.ValidatorProvider = new CompositeModelValidatorProvider(
+                _resourceExecutingContext.ValidatorProviders);
 
             var valueProviderFactoryContext = new ValueProviderFactoryContext(
                 ActionContext.HttpContext, 
                 ActionContext.RouteData.Values);
 
-            bindingContext.ValueProvider = CompositeValueProvider.Create(
+            ActionBindingContext.ValueProvider = CompositeValueProvider.Create(
                 _resourceExecutingContext.ValueProviderFactories,
                 valueProviderFactoryContext);
 
-            ActionContext.BindingContext = bindingContext;
-            var arguments = await GetActionArgumentsAsync(ActionContext);
+            var arguments = await GetActionArgumentsAsync(ActionContext, ActionBindingContext);
 
             _actionExecutingContext = new ActionExecutingContext(ActionContext, _filters, arguments);
             await InvokeActionFilterAsync();

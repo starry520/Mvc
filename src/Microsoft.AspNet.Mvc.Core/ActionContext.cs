@@ -13,7 +13,6 @@ namespace Microsoft.AspNet.Mvc
         public ActionContext([NotNull] ActionContext actionContext)
             : this(actionContext.HttpContext, actionContext.RouteData, actionContext.ActionDescriptor)
         {
-            BindingContext = actionContext.BindingContext;
             ModelState = actionContext.ModelState;
             Controller = actionContext.Controller;
         }
@@ -40,17 +39,6 @@ namespace Microsoft.AspNet.Mvc
         public ModelStateDictionary ModelState { get; private set; }
 
         public ActionDescriptor ActionDescriptor { get; private set; }
-
-
-        /// <summary>
-        /// Gets or sets the binding context.
-        /// </summary>
-        /// <remarks>
-        /// The <see cref="BindingContext"/> will only be available after resource filters 
-        /// and model binding have executed. Modifications to the binding context outside
-        /// of a resource filter will not affect binding of action arguments.
-        /// </remarks>
-        public ActionBindingContext BindingContext { get; set; }
 
         /// <summary>
         /// The controller is available only after the controller factory runs.

@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Open Technologies, Inc. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Mvc.Core;
 using Microsoft.AspNet.Mvc.ModelBinding;
@@ -15,16 +16,19 @@ namespace Microsoft.AspNet.Mvc
     public class BodyModelBinder : MetadataAwareBinder<IFormatterBinderMetadata>
     {
         private readonly ActionContext _actionContext;
+        private readonly IContextAccessor<ActionBindingContext> _actionBindingContextAccessor;
         private readonly IInputFormatterSelector _formatterSelector;
         private readonly IBodyModelValidator _bodyModelValidator;
         private readonly IValidationExcludeFiltersProvider _bodyValidationExcludeFiltersProvider;
 
         public BodyModelBinder([NotNull] IContextAccessor<ActionContext> context,
+                               [NotNull] IContextAccessor<ActionBindingContext> bindingContext,
                                [NotNull] IInputFormatterSelector selector,
                                [NotNull] IBodyModelValidator bodyModelValidator,
                                [NotNull] IValidationExcludeFiltersProvider bodyValidationExcludeFiltersProvider)
         {
             _actionContext = context.Value;
+            _actionBindingContextAccessor = bindingContext;
             _formatterSelector = selector;
             _bodyModelValidator = bodyModelValidator;
             _bodyValidationExcludeFiltersProvider = bodyValidationExcludeFiltersProvider;
@@ -34,8 +38,10 @@ namespace Microsoft.AspNet.Mvc
             ModelBindingContext bindingContext,
             IFormatterBinderMetadata metadata)
         {
+            var formatters = _actionBindingContextAccessor.Value.InputFormatters;
+
             var formatterContext = new InputFormatterContext(_actionContext, bindingContext.ModelType);
-            var formatter = _formatterSelector.SelectFormatter(formatterContext);
+            var formatter = _formatterSelector.SelectFormatter(formatters.ToList(), formatterContext);
 
             if (formatter == null)
             {

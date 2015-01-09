@@ -30,6 +30,13 @@ namespace System.Web.Http
         public ActionContext ActionContext { get; set; }
 
         /// <summary>
+        /// Gets the <see cref="ActionBindingContext"/>.
+        /// </summary>
+        /// <remarks>The setter is intended for unit testing purposes only.</remarks>
+        [Activate]
+        public ActionBindingContext BindingContext { get; set; }
+
+        /// <summary>
         /// Gets the http context.
         /// </summary>
         public HttpContext Context
@@ -39,6 +46,13 @@ namespace System.Web.Http
                 return ActionContext?.HttpContext;
             }
         }
+
+        /// <summary>
+        /// Gets the <see cref="IModelMetadataProvider"/>.
+        /// </summary>
+        /// <remarks>The setter is intended for unit testing purposes only.</remarks>
+        [Activate]
+        public IModelMetadataProvider MetadataProvider { get; set; }
 
         /// <summary>
         /// Gets model state after the model binding process. This ModelState will be empty before model binding
@@ -398,16 +412,15 @@ namespace System.Web.Http
         /// </param>
         public void Validate<TEntity>(TEntity entity, string keyPrefix)
         {
-            var bindingContext = ActionContext.BindingContext;
-            var modelMetadata = bindingContext.MetadataProvider.GetMetadataForType(() => entity, typeof(TEntity));
+            var modelMetadata = MetadataProvider.GetMetadataForType(() => entity, typeof(TEntity));
 
             var bodyValidationExcludeFiltersProvider = Context.RequestServices
                                                               .GetRequiredService<IValidationExcludeFiltersProvider>();
             var validator = Context.RequestServices.GetRequiredService<IBodyModelValidator>();
 
             var modelValidationContext = new ModelValidationContext(
-                bindingContext.MetadataProvider,
-                bindingContext.ValidatorProvider,
+                MetadataProvider,
+                BindingContext.ValidatorProvider,
                 ModelState,
                 modelMetadata,
                 containerMetadata: null,

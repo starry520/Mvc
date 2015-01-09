@@ -1300,21 +1300,21 @@ namespace Microsoft.AspNet.Mvc.Test
         private static Controller GetController(IModelBinder binder, IValueProvider provider)
         {
             var metadataProvider = new DataAnnotationsModelMetadataProvider();
-            var actionContext = new ActionContext(Mock.Of<HttpContext>(), new RouteData(), new ActionDescriptor())
-            {
-                BindingContext = new ActionBindingContext()
-                {
-                    MetadataProvider = metadataProvider,
-                    ModelBinder = binder,
-                    ValueProvider = provider ?? Mock.Of<IValueProvider>(),
-                },
-            };
+            var actionContext = new ActionContext(Mock.Of<HttpContext>(), new RouteData(), new ActionDescriptor());
 
             var viewData = new ViewDataDictionary(metadataProvider, new ModelStateDictionary());
+
+            var bindingContext = new ActionBindingContext()
+            {
+                ModelBinder = binder,
+                ValueProvider = provider,
+            };
 
             return new Controller()
             {
                 ActionContext = actionContext,
+                BindingContext = bindingContext,
+                MetadataProvider = metadataProvider,
                 ViewData = viewData
             };
         }

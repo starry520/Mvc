@@ -18,6 +18,7 @@ namespace Microsoft.AspNet.Mvc
         private readonly IModelMetadataProvider _modelMetadataProvider;
         private readonly IModelValidatorProviderProvider _modelValidationProviderProvider;
         private readonly IValueProviderFactoryProvider _valueProviderFactoryProvider;
+        private readonly IContextAccessor<ActionBindingContext> _actionBindingContextAccessor;
 
         public ControllerActionInvokerProvider(
             IControllerFactory controllerFactory,
@@ -28,7 +29,8 @@ namespace Microsoft.AspNet.Mvc
             IInputFormatterSelector inputFormatterSelector,
             IModelBinderProvider modelBinderProvider,
             IModelValidatorProviderProvider modelValidationProviderProvider,
-            IValueProviderFactoryProvider valueProviderFactoryProvider)
+            IValueProviderFactoryProvider valueProviderFactoryProvider,
+            IContextAccessor<ActionBindingContext> actionBindingContextAccessor)
         {
             _controllerFactory = controllerFactory;
             _inputFormatterProvider = inputFormatterProvider;
@@ -39,6 +41,7 @@ namespace Microsoft.AspNet.Mvc
             _inputFormatterSelector = inputFormatterSelector;
             _modelValidationProviderProvider = modelValidationProviderProvider;
             _valueProviderFactoryProvider = valueProviderFactoryProvider;
+            _actionBindingContextAccessor = actionBindingContextAccessor;
         }
 
         public int Order
@@ -63,7 +66,8 @@ namespace Microsoft.AspNet.Mvc
                                     _argumentBinder,
                                     _modelBinderProvider,
                                     _modelValidationProviderProvider,
-                                    _valueProviderFactoryProvider);
+                                    _valueProviderFactoryProvider,
+                                    _actionBindingContextAccessor);
             }
 
             callNext();

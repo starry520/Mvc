@@ -12,6 +12,7 @@ using System.Text;
 using Microsoft.AspNet.Mvc.Core;
 using Microsoft.AspNet.Mvc.ModelBinding;
 using Microsoft.AspNet.Mvc.Rendering.Expressions;
+using Microsoft.Framework.DependencyInjection;
 
 namespace Microsoft.AspNet.Mvc.Rendering
 {
@@ -20,6 +21,7 @@ namespace Microsoft.AspNet.Mvc.Rendering
         private const string HiddenListItem = @"<li style=""display:none""></li>";
 
         private readonly AntiForgery _antiForgery;
+        private readonly IContextAccessor<ActionBindingContext> _bindingContextAccessor;
         private readonly IModelMetadataProvider _metadataProvider;
         private readonly IUrlHelper _urlHelper;
 
@@ -28,10 +30,12 @@ namespace Microsoft.AspNet.Mvc.Rendering
         /// </summary>
         public DefaultHtmlGenerator(
             [NotNull] AntiForgery antiForgery,
+            [NotNull] IContextAccessor<ActionBindingContext> bindingContextAccessor,
             [NotNull] IModelMetadataProvider metadataProvider,
             [NotNull] IUrlHelper urlHelper)
         {
             _antiForgery = antiForgery;
+            _bindingContextAccessor = bindingContextAccessor;
             _metadataProvider = metadataProvider;
             _urlHelper = urlHelper;
 
@@ -720,7 +724,7 @@ namespace Microsoft.AspNet.Mvc.Rendering
             ModelMetadata metadata,
             string name)
         {
-            var validatorProvider = viewContext.BindingContext.ValidatorProvider;
+            var validatorProvider = _bindingContextAccessor.Value.ValidatorProvider;
             
             metadata = metadata ??
                 ExpressionMetadataProvider.FromStringExpression(name, viewContext.ViewData, _metadataProvider);

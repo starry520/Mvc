@@ -3,7 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Mvc.Core;
 using Microsoft.AspNet.Mvc.ModelBinding;
@@ -28,7 +28,8 @@ namespace Microsoft.AspNet.Mvc
             [NotNull] IControllerActionArgumentBinder controllerActionArgumentBinder,
             [NotNull] IModelBinderProvider modelBinderProvider,
             [NotNull] IModelValidatorProviderProvider modelValidatorProviderProvider,
-            [NotNull] IValueProviderFactoryProvider valueProviderFactoryProvider)
+            [NotNull] IValueProviderFactoryProvider valueProviderFactoryProvider,
+            [NotNull] IContextAccessor<ActionBindingContext> actionBindingContextAccessor)
             : base(
                   actionContext, 
                   filterProvider,
@@ -37,7 +38,8 @@ namespace Microsoft.AspNet.Mvc
                   inputFormatterSelector, 
                   modelBinderProvider, 
                   modelValidatorProviderProvider, 
-                  valueProviderFactoryProvider)
+                  valueProviderFactoryProvider,
+                  actionBindingContextAccessor)
         {
             _descriptor = descriptor;
             _controllerFactory = controllerFactory;
@@ -54,7 +56,10 @@ namespace Microsoft.AspNet.Mvc
 
         public async override Task InvokeAsync()
         {
+            // The binding context is used in activation
+            Debug.Assert(ActionBindingContext != null);
             var controller = _controllerFactory.CreateController(ActionContext);
+
             try
             {
                 ActionContext.Controller = controller;
@@ -80,9 +85,11 @@ namespace Microsoft.AspNet.Mvc
             return actionResult;
         }
 
-        protected override Task<IDictionary<string, object>> GetActionArgumentsAsync(ActionContext context)
+        protected override Task<IDictionary<string, object>> GetActionArgumentsAsync(
+            ActionContext context, 
+            ActionBindingContext bindingContext)
         {
-            return _argumentBinder.GetActionArgumentsAsync(context);
+            return _argumentBinder.GetActionArgumentsAsync(context, bindingContext);
         }
 
         // Marking as internal for Unit Testing purposes.

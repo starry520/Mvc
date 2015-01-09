@@ -8,15 +8,11 @@ namespace Microsoft.AspNet.Mvc
 {
     public class ActionBindingContext
     {
-        public IModelMetadataProvider MetadataProvider { get; set; }
-
         public IModelBinder ModelBinder { get; set; }
 
         public IValueProvider ValueProvider { get; set; }
 
         public IList<IInputFormatter> InputFormatters { get; set; }
-
-        public IInputFormatterSelector InputFormatterSelector { get; set; }
 
         public IModelValidatorProvider ValidatorProvider { get; set; }
     }

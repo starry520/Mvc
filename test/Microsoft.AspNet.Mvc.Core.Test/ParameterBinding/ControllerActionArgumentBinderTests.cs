@@ -54,10 +54,7 @@ namespace Microsoft.AspNet.Mvc.Core.Test
             // Arrange
             var actionContext = new ActionContext(
                 new RouteContext(Mock.Of<HttpContext>()),
-                Mock.Of<ActionDescriptor>())
-            {
-                BindingContext = new ActionBindingContext(),
-            };
+                Mock.Of<ActionDescriptor>());
 
             var metadataProvider = new DataAnnotationsModelMetadataProvider();
             var modelMetadata = metadataProvider.GetMetadataForType(
@@ -85,17 +82,12 @@ namespace Microsoft.AspNet.Mvc.Core.Test
 
             var actionContext = new ActionContext(
                 new RouteContext(Mock.Of<HttpContext>()),
-                Mock.Of<ActionDescriptor>())
-            {
-                BindingContext = new ActionBindingContext(),
-            };
+                Mock.Of<ActionDescriptor>());
 
             var metadataProvider = new DataAnnotationsModelMetadataProvider();
             var modelMetadata = metadataProvider.GetMetadataForParameter(modelAccessor: null,
                                                                          methodInfo: methodInfo,
                                                                          parameterName: "parameter");
-
-            var actionBindingContext = new ActionBindingContext();
 
             // Act
             var context = DefaultControllerActionArgumentBinder.GetModelBindingContext(
@@ -121,18 +113,12 @@ namespace Microsoft.AspNet.Mvc.Core.Test
 
             var actionContext = new ActionContext(
                 new RouteContext(Mock.Of<HttpContext>()),
-                Mock.Of<ActionDescriptor>())
-            {
-                BindingContext = new ActionBindingContext(),
-            };
+                Mock.Of<ActionDescriptor>());
 
             var metadataProvider = new DataAnnotationsModelMetadataProvider();
             var modelMetadata = metadataProvider.GetMetadataForParameter(modelAccessor: null,
                                                                          methodInfo: methodInfo,
                                                                          parameterName: "parameter");
-
-
-            var actionBindingContext = new ActionBindingContext();
 
             // Act
             var context = DefaultControllerActionArgumentBinder.GetModelBindingContext(
@@ -158,18 +144,12 @@ namespace Microsoft.AspNet.Mvc.Core.Test
 
             var actionContext = new ActionContext(
                 new RouteContext(Mock.Of<HttpContext>()),
-                Mock.Of<ActionDescriptor>())
-            {
-                BindingContext = new ActionBindingContext(),
-            };
+                Mock.Of<ActionDescriptor>());
 
             var metadataProvider = new DataAnnotationsModelMetadataProvider();
             var modelMetadata = metadataProvider.GetMetadataForParameter(modelAccessor: null,
                                                                          methodInfo: methodInfo,
                                                                          parameterName: "parameter1");
-
-
-            var actionBindingContext = new ActionBindingContext();
 
             // Act
             var context = DefaultControllerActionArgumentBinder.GetModelBindingContext(
@@ -209,11 +189,12 @@ namespace Microsoft.AspNet.Mvc.Core.Test
                 new RouteContext(Mock.Of<HttpContext>()),
                 actionDescriptor)
             {
-                BindingContext = new ActionBindingContext()
-                {
-                    ModelBinder = binder.Object,
-                },
                 Controller = Mock.Of<object>(),
+            };
+
+            var actionBindingContext = new ActionBindingContext()
+            {
+                ModelBinder = binder.Object,
             };
 
             var inputFormattersProvider = new Mock<IInputFormattersProvider>();
@@ -224,7 +205,7 @@ namespace Microsoft.AspNet.Mvc.Core.Test
             var invoker = new DefaultControllerActionArgumentBinder(new DataAnnotationsModelMetadataProvider());
 
             // Act
-            var result = await invoker.GetActionArgumentsAsync(actionContext);
+            var result = await invoker.GetActionArgumentsAsync(actionContext, actionBindingContext);
 
             // Assert
             Assert.Empty(result);
@@ -268,17 +249,18 @@ namespace Microsoft.AspNet.Mvc.Core.Test
                 new RouteContext(Mock.Of<HttpContext>()),
                 actionDescriptor)
             {
-                BindingContext = new ActionBindingContext()
-                {
-                    ModelBinder = binder.Object,
-                },
                 Controller = Mock.Of<object>(),
+            };
+
+            var actionBindingContext = new ActionBindingContext()
+            {
+                ModelBinder = binder.Object,
             };
 
             var invoker = new DefaultControllerActionArgumentBinder(metadataProvider);
 
             // Act
-            var result = await invoker.GetActionArgumentsAsync(actionContext);
+            var result = await invoker.GetActionArgumentsAsync(actionContext, actionBindingContext);
 
             // Assert
             Assert.Equal(1, result.Count);

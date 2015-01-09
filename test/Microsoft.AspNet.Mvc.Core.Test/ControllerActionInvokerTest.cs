@@ -1981,7 +1981,8 @@ namespace Microsoft.AspNet.Mvc
                 Mock.Of<IControllerActionArgumentBinder>(),
                 new MockModelBinderProvider(),
                 new MockModelValidatorProviderProvider(),
-                new MockValueProviderFactoryProvider());
+                new MockValueProviderFactoryProvider(),
+                new MockActionBindingContextAccessor());
 
             return invoker;
         }
@@ -2038,7 +2039,8 @@ namespace Microsoft.AspNet.Mvc
                 new DefaultControllerActionArgumentBinder(metadataProvider),
                 new MockModelBinderProvider() { ModelBinders = new List<IModelBinder>() { binder.Object } },
                 new MockModelValidatorProviderProvider(),
-                new MockValueProviderFactoryProvider());
+                new MockValueProviderFactoryProvider(),
+                new MockActionBindingContextAccessor());
 
             // Act
             await invoker.InvokeAsync();
@@ -2103,7 +2105,8 @@ namespace Microsoft.AspNet.Mvc
                 IControllerActionArgumentBinder controllerActionArgumentBinder,
                 IModelBinderProvider modelBinderProvider,
                 IModelValidatorProviderProvider modelValidatorProviderProvider,
-                IValueProviderFactoryProvider valueProviderFactoryProvider)
+                IValueProviderFactoryProvider valueProviderFactoryProvider,
+                IContextAccessor<ActionBindingContext> actionBindingContext)
                 : base(
                       actionContext,
                       filterProvider,
@@ -2115,7 +2118,8 @@ namespace Microsoft.AspNet.Mvc
                       controllerActionArgumentBinder,
                       modelBinderProvider,
                       modelValidatorProviderProvider,
-                      valueProviderFactoryProvider)
+                      valueProviderFactoryProvider,
+                      actionBindingContext)
             {
                 _factoryMock = controllerFactoryMock;
             }

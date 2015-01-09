@@ -12,6 +12,7 @@ using Microsoft.AspNet.Routing;
 using Microsoft.AspNet.Security.DataProtection;
 using Microsoft.Framework.OptionsModel;
 using Moq;
+using Microsoft.Framework.DependencyInjection;
 
 namespace Microsoft.AspNet.Mvc.Rendering
 {
@@ -141,13 +142,15 @@ namespace Microsoft.AspNet.Mvc.Rendering
             IHtmlGenerator htmlGenerator)
         {
             var httpContext = new DefaultHttpContext();
-            var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor())
+            var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor());
+
+            var bindingContext = new ActionBindingContext()
             {
-                BindingContext = new ActionBindingContext()
-                {
-                    ValidatorProvider = new DataAnnotationsModelValidatorProvider(),
-                },
+                ValidatorProvider = new DataAnnotationsModelValidatorProvider(),
             };
+
+            var bindingContextAccessor = new Mock<IContextAccessor<ActionBindingContext>>();
+            bindingContextAccessor.SetupGet(a => a.Value).Returns(bindingContext);
 
             var serviceProvider = new Mock<IServiceProvider>();
             serviceProvider
@@ -165,6 +168,7 @@ namespace Microsoft.AspNet.Mvc.Rendering
             {
                 htmlGenerator = new DefaultHtmlGenerator(
                     GetAntiForgeryInstance(),
+                    bindingContextAccessor.Object,
                     provider,
                     urlHelper);
             }
