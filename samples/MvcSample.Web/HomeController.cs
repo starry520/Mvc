@@ -15,6 +15,43 @@ namespace MvcSample.Web
         private static readonly IEnumerable<SelectListItem> _addresses = CreateAddresses();
         private static readonly IEnumerable<SelectListItem> _ages = CreateAges();
 
+        public class Person
+        {
+
+        }
+
+        public class Person2
+        {
+
+        }
+
+        public class Person3
+        {
+
+        }
+        public class Person4
+        {
+
+        }
+        [Consumes("application/json")]
+        public void TestPerson(Person person)
+        {
+        }
+
+        [Consumes("application/xml")]
+        public void TestPerson(Person2 person)
+        {
+        }
+
+        [Consumes("text/json")]
+        public void TestPerson(Person3 person)
+        {
+        }
+
+        public void TestPerson(Person4 person)
+        {
+        }
+
         public ActionResult Index()
         {
             return View("MyView", CreateUser());
