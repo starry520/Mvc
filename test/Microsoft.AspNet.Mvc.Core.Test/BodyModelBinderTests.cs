@@ -163,5 +163,10 @@ namespace Microsoft.AspNet.Mvc
                            .Returns(actionContext);
             return contextAccessor.Object;
         }
+
+        private class Person
+        {
+            public string Name { get; set; }
+        }
     }
 }

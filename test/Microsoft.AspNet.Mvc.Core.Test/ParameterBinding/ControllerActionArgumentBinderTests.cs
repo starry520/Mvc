@@ -288,6 +288,11 @@ namespace Microsoft.AspNet.Mvc.Core.Test
             }
         }
 
+        private class Person
+        {
+            public string Name { get; set; }
+        }
+
         private class NonValueProviderBinderMetadataAttribute : Attribute, IBinderMetadata
         {
         }

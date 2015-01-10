@@ -799,7 +799,7 @@ namespace Microsoft.AspNet.Mvc
         }
 
         /// <summary>
-        /// Updates the specified <paramref name="model"/> instance using values from the controller's current 
+        /// Updates the specified <paramref name="model"/> instance using values from the controller's current
         /// <see cref="IValueProvider"/>.
         /// </summary>
         /// <typeparam name="TModel">The type of the model object.</typeparam>

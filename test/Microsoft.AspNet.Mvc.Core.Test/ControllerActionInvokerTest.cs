@@ -326,7 +326,7 @@ namespace Microsoft.AspNet.Mvc
         }
 
         [Fact]
-        public async Task InvokeAction_ExceptionInAuthorizationFilterCannotBeHandledByExceptionFilters()
+        public async Task InvokeAction_ExceptionInAuthorizationFilterCannotBeHandledByOtherFilters()
         {
             // Arrange
             var expected = new InvalidCastException();
@@ -349,6 +349,7 @@ namespace Microsoft.AspNet.Mvc
 
             // None of these filters should run
             var authorizationFilter2 = new Mock<IAuthorizationFilter>(MockBehavior.Strict);
+            var resourceFilter = new Mock<IResourceFilter>(MockBehavior.Strict);
             var actionFilter = new Mock<IActionFilter>(MockBehavior.Strict);
             var resultFilter = new Mock<IResultFilter>(MockBehavior.Strict);
 
@@ -357,6 +358,7 @@ namespace Microsoft.AspNet.Mvc
                 exceptionFilter.Object,
                 authorizationFilter1.Object,
                 authorizationFilter2.Object,
+                resourceFilter.Object,
                 actionFilter.Object,
                 resultFilter.Object,
             });
@@ -1708,6 +1710,7 @@ namespace Microsoft.AspNet.Mvc
                 .Verifiable();
 
             var resourceFilter3 = new Mock<IAsyncResourceFilter>(MockBehavior.Strict);
+            var exceptionFilter = new Mock<IExceptionFilter>(MockBehavior.Strict);
             var actionFilter = new Mock<IAsyncActionFilter>(MockBehavior.Strict);
             var resultFilter = new Mock<IAsyncResultFilter>(MockBehavior.Strict);
 
@@ -1715,8 +1718,9 @@ namespace Microsoft.AspNet.Mvc
                 new IFilter[]
                 {
                     resourceFilter1.Object, // This filter should see the result retured from resourceFilter2
-                    resourceFilter2.Object,
+                    resourceFilter2.Object, // This filter will short circuit
                     resourceFilter3.Object, // This shouldn't run - it will throw if it does
+                    exceptionFilter.Object, // This shouldn't run - it will throw if it does
                     actionFilter.Object, // This shouldn't run - it will throw if it does
                     resultFilter.Object // This shouldn't run - it will throw if it does
                 },

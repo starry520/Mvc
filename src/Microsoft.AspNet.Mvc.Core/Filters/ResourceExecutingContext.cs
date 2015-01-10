@@ -12,6 +12,11 @@ namespace Microsoft.AspNet.Mvc
     /// </summary>
     public class ResourceExecutingContext : FilterContext
     {
+        /// <summary>
+        /// Creates a new <see cref="ResourceExecutingContext"/>.
+        /// </summary>
+        /// <param name="actionContext">The <see cref="ActionContext"/>.</param>
+        /// <param name="filters">The list of <see cref="IFilter"/> instances.</param>
         public ResourceExecutingContext(ActionContext actionContext, IList<IFilter> filters)
             : base(actionContext, filters)
         {

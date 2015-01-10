@@ -15,13 +15,18 @@ namespace Microsoft.AspNet.Mvc
         private Exception _exception;
         private ExceptionDispatchInfo _exceptionDispatchInfo;
 
+        /// <summary>
+        /// Creates a new <see cref="ResourceExecutedContext"/>.
+        /// </summary>
+        /// <param name="actionContext">The <see cref="ActionContext"/>.</param>
+        /// <param name="filters">The list of <see cref="IFilter"/> instances.</param>
         public ResourceExecutedContext(ActionContext actionContext, IList<IFilter> filters)
             : base(actionContext, filters)
         {
         }
 
         /// <summary>
-        /// Gets or sets a value which indicates whether or execution was canceled by a resource filter.
+        /// Gets or sets a value which indicates whether or not execution was canceled by a resource filter.
         /// If true, then a resource filter short-circuted execution by setting
         /// <see cref="ResourceExecutingContext.Result"/>.
         /// </summary>
@@ -81,7 +86,7 @@ namespace Microsoft.AspNet.Mvc
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether not the current <see cref="Exception"/> has been handled.
+        /// Gets or sets a value indicating whether or not the current <see cref="Exception"/> has been handled.
         /// 
         /// If <c>false</c> the <see cref="Exception"/> will be rethrown by the runtime after resource filters
         /// have executed.

@@ -12,7 +12,7 @@ namespace Microsoft.AspNet.Mvc
         private readonly IControllerActionArgumentBinder _argumentBinder;
         private readonly IControllerFactory _controllerFactory;
         private readonly INestedProviderManager<FilterProviderContext> _filterProvider;
-        private readonly IInputFormattersProvider _inputFormatterProvider;
+        private readonly IInputFormattersProvider _inputFormattersProvider;
         private readonly IInputFormatterSelector _inputFormatterSelector;
         private readonly IModelBinderProvider _modelBinderProvider;
         private readonly IModelMetadataProvider _modelMetadataProvider;
@@ -22,7 +22,7 @@ namespace Microsoft.AspNet.Mvc
 
         public ControllerActionInvokerProvider(
             IControllerFactory controllerFactory,
-            IInputFormattersProvider inputFormatterProvider,
+            IInputFormattersProvider inputFormattersProvider,
             INestedProviderManager<FilterProviderContext> filterProvider,
             IControllerActionArgumentBinder argumentBinder,
             IModelMetadataProvider modelMetadataProvider,
@@ -33,7 +33,7 @@ namespace Microsoft.AspNet.Mvc
             IContextAccessor<ActionBindingContext> actionBindingContextAccessor)
         {
             _controllerFactory = controllerFactory;
-            _inputFormatterProvider = inputFormatterProvider;
+            _inputFormattersProvider = inputFormattersProvider;
             _filterProvider = filterProvider;
             _argumentBinder = argumentBinder;
             _modelMetadataProvider = modelMetadataProvider;
@@ -61,7 +61,7 @@ namespace Microsoft.AspNet.Mvc
                                     _controllerFactory,
                                     actionDescriptor,
                                     _modelMetadataProvider,
-                                    _inputFormatterProvider,
+                                    _inputFormattersProvider,
                                     _inputFormatterSelector,
                                     _argumentBinder,
                                     _modelBinderProvider,
