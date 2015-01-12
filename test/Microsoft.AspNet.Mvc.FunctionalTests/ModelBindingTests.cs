@@ -3,11 +3,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -1326,6 +1326,43 @@ namespace Microsoft.AspNet.Mvc.FunctionalTests
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var body = await response.Content.ReadAsStringAsync();
             Assert.Equal(expectedContent, body);
+        }
+
+        [Fact]
+        public async Task FormFileModelBinder_CanBind_SingleFile()
+        {
+            // Arrange
+            var server = TestServer.Create(_services, _app);
+            var client = server.CreateClient();
+            var url = "http://localhost/FileUpload/UploadSingle";
+            var streamContent = new StreamContent(new MemoryStream());
+            var formData = new MultipartFormDataContent("Upload----");
+            formData.Add(streamContent, "file", "test.txt");
+
+            // Act
+            var response = await client.PostAsync(url, formData);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task FormFileModelBinder_CanBind_MultipleFiles()
+        {
+            // Arrange
+            var server = TestServer.Create(_services, _app);
+            var client = server.CreateClient();
+            var url = "http://localhost/FileUpload/UploadMultiple";
+            var streamContent = new StreamContent(new MemoryStream());
+            var formData = new MultipartFormDataContent("Upload----");
+            formData.Add(streamContent, "files", "test1.txt");
+            formData.Add(streamContent, "files", "test2.txt");
+
+            // Act
+            var response = await client.PostAsync(url, formData);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
     }
 }
